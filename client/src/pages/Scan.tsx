@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function Scan() {
   const [isScanning, setIsScanning] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
 
@@ -15,39 +16,52 @@ export default function Scan() {
     return () => stopCamera();
   }, []);
 
+  // Effect to attach stream to video element once it's rendered and stream is available
+  useEffect(() => {
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream;
+      // iOS requires user interaction for audio, but video is muted so it should autoplay if playsInline is set.
+      // However, explicit play() call is safer.
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(e => {
+            console.error("Play error:", e);
+            // If autoplay is blocked, we might need to show a "Tap to start" button, 
+            // but usually muted playsInline works.
+        });
+      }
+    }
+  }, [videoRef, stream]); // Removed isScanning from dependency to prevent re-triggering
+
   const startCamera = async (retry = true) => {
-    setIsScanning(true);
     setCameraError(null);
+    setIsScanning(true);
+    
     try {
-      // Ensure previous tracks are stopped
-      stopCamera();
-      
+      // Clean up existing stream if any
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+
       const constraints = {
         video: { 
           facingMode: "environment"
-          // Removed ideal width/height to be more compatible
-        } 
+        },
+        audio: false // Explicitly disable audio to avoid permission issues/feedback
       };
 
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      const newStream = await navigator.mediaDevices.getUserMedia(constraints);
+      setStream(newStream);
       
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        // Explicitly call play() for iOS
-        await videoRef.current.play().catch(e => console.error("Play error:", e));
-      }
     } catch (err) {
       console.error("Camera error:", err);
       
-      // Retry with fallback (any camera) if first attempt failed
+      // Retry with fallback (any camera) if first attempt failed and requested
       if (retry) {
         console.log("Retrying with fallback constraints...");
         try {
             const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
-            if (videoRef.current) {
-                videoRef.current.srcObject = fallbackStream;
-                await videoRef.current.play().catch(e => console.error("Play error:", e));
-            }
+            setStream(fallbackStream);
             return; // Success on retry
         } catch (fallbackErr) {
             console.error("Fallback camera error:", fallbackErr);
@@ -56,6 +70,8 @@ export default function Scan() {
 
       setCameraError("Unable to access camera. Please check permissions.");
       setIsScanning(false);
+      setStream(null);
+      
       toast({
         title: "Camera Error",
         description: "Could not access camera. Please enable camera permissions in Settings.",
@@ -65,12 +81,15 @@ export default function Scan() {
   };
 
   const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
+    if (stream) {
       stream.getTracks().forEach(track => track.stop());
-      videoRef.current.srcObject = null;
     }
+    setStream(null);
     setIsScanning(false);
+  };
+
+  const handleRetry = () => {
+    startCamera(true);
   };
 
   return (
@@ -123,7 +142,7 @@ export default function Scan() {
                </p>
                {cameraError && (
                  <button 
-                   onClick={startCamera}
+                   onClick={handleRetry}
                    className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm"
                  >
                    Try Again
