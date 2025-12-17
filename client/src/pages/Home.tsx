@@ -7,6 +7,7 @@ export default function Home() {
     <Layout>
       <div className="space-y-8">
         <header className="pt-6">
+          <span className="text-xs font-bold tracking-[0.2em] text-muted-foreground uppercase mb-2 block">The Cubby</span>
           <h1 className="text-4xl font-serif text-foreground leading-tight">
             Good Morning,<br />
             <span className="text-primary">Chef.</span>
