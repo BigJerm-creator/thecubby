@@ -1,17 +1,23 @@
 import Layout from "@/components/layout";
-import { ScanLine, Barcode, Camera, Keyboard } from "lucide-react";
+import { ScanLine, Barcode, Camera, Keyboard, X, Check } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { BrowserMultiFormatReader, NotFoundException } from '@zxing/library';
+import { useLocation } from "wouter";
 
 export default function Scan() {
   const [isScanning, setIsScanning] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [scannedCode, setScannedCode] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   useEffect(() => {
+    codeReaderRef.current = new BrowserMultiFormatReader();
     startCamera();
     return () => stopCamera();
   }, []);
@@ -26,16 +32,42 @@ export default function Scan() {
       if (playPromise !== undefined) {
         playPromise.catch(e => {
             console.error("Play error:", e);
-            // If autoplay is blocked, we might need to show a "Tap to start" button, 
-            // but usually muted playsInline works.
         });
       }
+
+      // Start decoding from video stream
+      if (codeReaderRef.current && videoRef.current) {
+        codeReaderRef.current.decodeFromVideoDevice(
+          undefined, 
+          videoRef.current, 
+          (result, err) => {
+            if (result) {
+              const text = result.getText();
+              setScannedCode(text);
+              stopCamera();
+              toast({
+                title: "Item Scanned!",
+                description: `Found barcode: ${text}`,
+                action: <Check className="h-4 w-4 text-green-500" />
+              });
+              
+              // Simulate product lookup delay
+              setTimeout(() => {
+                  // In a real app, this would query a product API
+                  // For now, redirect to a "New Item" form with the code pre-filled
+                  setLocation(`/kitchen?new_item=${text}`);
+              }, 1500);
+            }
+          }
+        ).catch(err => console.error("Decode error:", err));
+      }
     }
-  }, [videoRef, stream]); // Removed isScanning from dependency to prevent re-triggering
+  }, [videoRef, stream]); 
 
   const startCamera = async (retry = true) => {
     setCameraError(null);
     setIsScanning(true);
+    setScannedCode(null);
     
     try {
       // Clean up existing stream if any
@@ -47,7 +79,7 @@ export default function Scan() {
         video: { 
           facingMode: "environment"
         },
-        audio: false // Explicitly disable audio to avoid permission issues/feedback
+        audio: false 
       };
 
       const newStream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -81,6 +113,9 @@ export default function Scan() {
   };
 
   const stopCamera = () => {
+    if (codeReaderRef.current) {
+        codeReaderRef.current.reset();
+    }
     if (stream) {
       stream.getTracks().forEach(track => track.stop());
     }
@@ -107,7 +142,6 @@ export default function Scan() {
               {/* Actual Camera Feed */}
               <video 
                 ref={videoRef}
-                autoPlay 
                 playsInline 
                 muted
                 className="absolute inset-0 w-full h-full object-cover"
@@ -136,17 +170,32 @@ export default function Scan() {
             </>
           ) : (
              <div className="absolute inset-0 bg-muted flex flex-col items-center justify-center p-4 text-center">
-               <Camera size={48} className="text-muted-foreground mb-4" />
-               <p className="text-muted-foreground font-medium">
-                 {cameraError || "Camera Paused"}
-               </p>
-               {cameraError && (
-                 <button 
-                   onClick={handleRetry}
-                   className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm"
-                 >
-                   Try Again
-                 </button>
+               {scannedCode ? (
+                 <div className="flex flex-col items-center gap-4">
+                    <div className="h-16 w-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
+                        <Check size={32} />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-medium text-foreground">Scanned!</h3>
+                        <p className="text-muted-foreground font-mono mt-1">{scannedCode}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Redirecting...</p>
+                 </div>
+               ) : (
+                <>
+                   <Camera size={48} className="text-muted-foreground mb-4" />
+                   <p className="text-muted-foreground font-medium">
+                     {cameraError || "Camera Paused"}
+                   </p>
+                   {cameraError && (
+                     <button 
+                       onClick={handleRetry}
+                       className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm"
+                     >
+                       Try Again
+                     </button>
+                   )}
+                </>
                )}
              </div>
           )}
