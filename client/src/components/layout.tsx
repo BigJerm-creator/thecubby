@@ -15,17 +15,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col max-w-md mx-auto bg-background shadow-2xl relative overflow-hidden">
-      {/* Top Status Bar Decoration (Simulated) */}
-      <div className="h-1 bg-primary w-full absolute top-0 z-50 opacity-50" />
+    <div className="min-h-screen flex flex-col w-full md:max-w-md md:mx-auto bg-background md:shadow-2xl relative overflow-hidden md:my-4 md:rounded-[3rem] md:border-4 md:border-stone-900/5">
+      {/* Top Status Bar Decoration (Simulated - only visible on desktop/preview) */}
+      <div className="h-1 bg-primary w-full absolute top-0 z-50 opacity-50 md:hidden" />
 
       <main className="flex-1 overflow-y-auto pb-24 px-4 pt-6 scrollbar-hide">
         {children}
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-lg border-t border-border z-40 max-w-md mx-auto">
-        <div className="flex justify-around items-end pb-6 pt-3 px-2">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 w-full md:absolute">
+        <div className="bg-card/80 backdrop-blur-lg border-t border-border w-full md:max-w-md md:mx-auto pb-6 pt-3 px-2 flex justify-around items-end">
           {navItems.map((item) => {
             const isActive = location === item.path;
             const Icon = item.icon;
