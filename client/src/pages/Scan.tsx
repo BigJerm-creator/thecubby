@@ -1,10 +1,77 @@
 import Layout from "@/components/layout";
 import { ScanLine, Barcode, Camera, Keyboard } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Scan() {
-  const [isScanning, setIsScanning] = useState(true);
+  const [isScanning, setIsScanning] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    startCamera();
+    return () => stopCamera();
+  }, []);
+
+  const startCamera = async (retry = true) => {
+    setIsScanning(true);
+    setCameraError(null);
+    try {
+      // Ensure previous tracks are stopped
+      stopCamera();
+      
+      const constraints = {
+        video: { 
+          facingMode: "environment"
+          // Removed ideal width/height to be more compatible
+        } 
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        // Explicitly call play() for iOS
+        await videoRef.current.play().catch(e => console.error("Play error:", e));
+      }
+    } catch (err) {
+      console.error("Camera error:", err);
+      
+      // Retry with fallback (any camera) if first attempt failed
+      if (retry) {
+        console.log("Retrying with fallback constraints...");
+        try {
+            const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            if (videoRef.current) {
+                videoRef.current.srcObject = fallbackStream;
+                await videoRef.current.play().catch(e => console.error("Play error:", e));
+            }
+            return; // Success on retry
+        } catch (fallbackErr) {
+            console.error("Fallback camera error:", fallbackErr);
+        }
+      }
+
+      setCameraError("Unable to access camera. Please check permissions.");
+      setIsScanning(false);
+      toast({
+        title: "Camera Error",
+        description: "Could not access camera. Please enable camera permissions in Settings.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const stopCamera = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+    }
+    setIsScanning(false);
+  };
 
   return (
     <Layout>
@@ -18,10 +85,14 @@ export default function Scan() {
         <div className="relative aspect-[3/4] bg-black rounded-3xl overflow-hidden shadow-xl mb-6 mx-2">
           {isScanning ? (
             <>
-              {/* Simulated Camera Feed Background */}
-              <div className="absolute inset-0 bg-zinc-900 flex items-center justify-center">
-                <p className="text-zinc-600 text-xs">Camera Feed</p>
-              </div>
+              {/* Actual Camera Feed */}
+              <video 
+                ref={videoRef}
+                autoPlay 
+                playsInline 
+                muted
+                className="absolute inset-0 w-full h-full object-cover"
+              />
               
               {/* Overlay UI */}
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-8">
@@ -45,8 +116,19 @@ export default function Scan() {
               </div>
             </>
           ) : (
-             <div className="absolute inset-0 bg-muted flex items-center justify-center">
-               <p className="text-muted-foreground">Camera Paused</p>
+             <div className="absolute inset-0 bg-muted flex flex-col items-center justify-center p-4 text-center">
+               <Camera size={48} className="text-muted-foreground mb-4" />
+               <p className="text-muted-foreground font-medium">
+                 {cameraError || "Camera Paused"}
+               </p>
+               {cameraError && (
+                 <button 
+                   onClick={startCamera}
+                   className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm"
+                 >
+                   Try Again
+                 </button>
+               )}
              </div>
           )}
         </div>

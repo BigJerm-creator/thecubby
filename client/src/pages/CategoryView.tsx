@@ -1,5 +1,5 @@
 import Layout from "@/components/layout";
-import { Link, useRoute } from "wouter";
+import { Link, useRoute, useLocation } from "wouter";
 import { MOCK_INVENTORY, KITCHEN_CATEGORIES } from "@/lib/mockData";
 import { ArrowLeft, Plus, Filter, MoreHorizontal, Calendar, Clock } from "lucide-react";
 import { motion } from "framer-motion";
@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 
 export default function CategoryView() {
   const [match, params] = useRoute("/category/:id");
+  const [, setLocation] = useLocation();
   const categoryId = params?.id || "";
   const category = KITCHEN_CATEGORIES.find(c => c.id === categoryId);
   const items = MOCK_INVENTORY[categoryId] || [];
@@ -43,7 +44,12 @@ export default function CategoryView() {
           {items.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed border-border rounded-xl">
               <p className="text-muted-foreground">No items in this category yet.</p>
-              <button className="mt-4 text-primary font-medium text-sm hover:underline">Add your first item</button>
+              <button 
+                onClick={() => setLocation("/scan")}
+                className="mt-4 text-primary font-medium text-sm hover:underline"
+              >
+                Add your first item
+              </button>
             </div>
           ) : (
             items.map((item, index) => (
@@ -85,7 +91,10 @@ export default function CategoryView() {
       
       {/* Floating Action Button */}
       <div className="fixed bottom-24 right-6 z-30">
-        <button className="h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-transform">
+        <button 
+          onClick={() => setLocation("/scan")}
+          className="h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+        >
           <Plus size={24} />
         </button>
       </div>
