@@ -77,23 +77,21 @@ export default function CategoryView() {
                   )}
                 </div>
 
-                <div className="flex flex-col items-end gap-1">
-                  <span className="text-lg font-serif font-medium text-primary">
-                    {item.quantity} <span className="text-xs font-sans text-muted-foreground">{item.unit}</span>
-                  </span>
-                  
-                  {/* Quick Actions (Hidden by default, visible on hover/swipe) */}
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 mt-1">
-                    <button className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors text-xs" data-testid="button-decrease-qty">-</button>
-                    <button className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors text-xs" data-testid="button-increase-qty">+</button>
-                    <button 
-                      onClick={() => handleDeleteItem(item.id)}
-                      className="h-6 w-6 rounded-full bg-destructive/10 flex items-center justify-center text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
-                      data-testid={`button-delete-item-${item.id}`}
-                    >
-                      <Trash2 size={14} />
-                    </button>
+                <div className="flex items-center gap-3">
+                  <div className="flex flex-col items-end">
+                    <span className="text-lg font-serif font-medium text-primary">
+                      {item.quantity} <span className="text-xs font-sans text-muted-foreground">{item.unit}</span>
+                    </span>
                   </div>
+                  
+                  <button 
+                    onClick={() => handleDeleteItem(item.id)}
+                    className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                    data-testid={`button-delete-item-${item.id}`}
+                    title="Delete item"
+                  >
+                    <Trash2 size={16} />
+                  </button>
                 </div>
               </motion.div>
             ))
