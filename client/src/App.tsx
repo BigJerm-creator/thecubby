@@ -8,6 +8,7 @@ import Home from "@/pages/Home";
 import Kitchen from "@/pages/Kitchen";
 import CategoryView from "@/pages/CategoryView";
 import Scan from "@/pages/Scan";
+import ManualEntry from "@/pages/ManualEntry";
 import Search from "@/pages/Search";
 import Settings from "@/pages/Settings";
 
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/kitchen" component={Kitchen} />
       <Route path="/category/:id" component={CategoryView} />
       <Route path="/scan" component={Scan} />
+      <Route path="/manual-entry" component={ManualEntry} />
       <Route path="/search" component={Search} />
       <Route path="/settings" component={Settings} />
       <Route component={NotFound} />

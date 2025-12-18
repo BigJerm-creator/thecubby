@@ -215,7 +215,7 @@ export default function Scan() {
         </div>
 
         <button 
-          onClick={() => setLocation("/kitchen")}
+          onClick={() => setLocation("/manual-entry")}
           className="mt-4 mx-2 py-3 flex items-center justify-center gap-2 text-primary font-medium text-sm hover:bg-primary/5 rounded-lg transition-colors"
           data-testid="button-enter-manually"
         >
