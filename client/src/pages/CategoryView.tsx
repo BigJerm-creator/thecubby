@@ -1,16 +1,21 @@
 import Layout from "@/components/layout";
 import { Link, useRoute, useLocation } from "wouter";
 import { MOCK_INVENTORY, KITCHEN_CATEGORIES } from "@/lib/mockData";
-import { ArrowLeft, Plus, Filter, MoreHorizontal, Calendar, Clock } from "lucide-react";
+import { ArrowLeft, Plus, Filter, MoreHorizontal, Calendar, Clock, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 export default function CategoryView() {
   const [match, params] = useRoute("/category/:id");
   const [, setLocation] = useLocation();
   const categoryId = params?.id || "";
   const category = KITCHEN_CATEGORIES.find(c => c.id === categoryId);
-  const items = MOCK_INVENTORY[categoryId] || [];
+  const [items, setItems] = useState(MOCK_INVENTORY[categoryId] || []);
+
+  const handleDeleteItem = (itemId: string) => {
+    setItems(items.filter(item => item.id !== itemId));
+  };
 
   if (!category) return <Layout><div>Category not found</div></Layout>;
 
@@ -79,8 +84,15 @@ export default function CategoryView() {
                   
                   {/* Quick Actions (Hidden by default, visible on hover/swipe) */}
                   <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 mt-1">
-                    <button className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors text-xs">-</button>
-                    <button className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors text-xs">+</button>
+                    <button className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors text-xs" data-testid="button-decrease-qty">-</button>
+                    <button className="h-6 w-6 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors text-xs" data-testid="button-increase-qty">+</button>
+                    <button 
+                      onClick={() => handleDeleteItem(item.id)}
+                      className="h-6 w-6 rounded-full bg-destructive/10 flex items-center justify-center text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                      data-testid={`button-delete-item-${item.id}`}
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
                 </div>
               </motion.div>
