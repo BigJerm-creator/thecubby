@@ -1,7 +1,27 @@
 import Layout from "@/components/layout";
 import { User, Bell, Shield, HelpCircle, LogOut, ChevronRight, Moon } from "lucide-react";
+import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Settings() {
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+
+  const handleMenuClick = (label: string) => {
+    toast({
+      title: label,
+      description: `Opening ${label} settings...`
+    });
+  };
+
+  const handleSignOut = () => {
+    toast({
+      title: "Signed Out",
+      description: "You have been signed out successfully."
+    });
+    setLocation("/");
+  };
+
   return (
     <Layout>
       <div className="space-y-6 pt-4">
@@ -30,7 +50,12 @@ export default function Settings() {
               { icon: Moon, label: "Appearance" },
               { icon: Shield, label: "Privacy & Security" },
             ].map((item, i) => (
-              <button key={i} className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors text-left">
+              <button 
+                key={i} 
+                onClick={() => handleMenuClick(item.label)}
+                className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors text-left"
+                data-testid={`button-settings-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
+              >
                 <div className="flex items-center gap-3">
                   <item.icon size={20} className="text-muted-foreground" />
                   <span className="text-foreground">{item.label}</span>
@@ -42,7 +67,11 @@ export default function Settings() {
 
           <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1 mt-6">Support</h3>
           <div className="bg-card border border-border rounded-2xl overflow-hidden divide-y divide-border/50">
-             <button className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors text-left">
+             <button 
+               onClick={() => handleMenuClick("Help & FAQ")}
+               className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors text-left"
+               data-testid="button-settings-help-faq"
+             >
                 <div className="flex items-center gap-3">
                   <HelpCircle size={20} className="text-muted-foreground" />
                   <span className="text-foreground">Help & FAQ</span>
@@ -51,7 +80,11 @@ export default function Settings() {
               </button>
           </div>
           
-           <button className="w-full flex items-center justify-center gap-2 p-4 text-destructive hover:bg-destructive/5 rounded-2xl transition-colors mt-6 font-medium">
+           <button 
+             onClick={handleSignOut}
+             className="w-full flex items-center justify-center gap-2 p-4 text-destructive hover:bg-destructive/5 rounded-2xl transition-colors mt-6 font-medium"
+             data-testid="button-sign-out"
+           >
               <LogOut size={20} />
               Sign Out
            </button>
