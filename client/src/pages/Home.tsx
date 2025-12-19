@@ -1,12 +1,29 @@
 import Layout from "@/components/layout";
-import { Package, AlertCircle, TrendingDown } from "lucide-react";
+import { Package, AlertCircle, TrendingDown, ShoppingCart } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useInventory } from "@/lib/InventoryContext";
+import { useShoppingList } from "@/lib/ShoppingListContext";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
   const [, setLocation] = useLocation();
-  const { getExpiredItems } = useInventory();
+  const { getExpiredItems, inventory } = useInventory();
+  const { addItem: addToShoppingList, items: shoppingItems } = useShoppingList();
+  const { toast } = useToast();
   const expiredCount = getExpiredItems().length;
+  const shoppingListCount = shoppingItems.filter(item => !item.checked).length;
+
+  const handleRestock = (itemName: string, category: string) => {
+    addToShoppingList({
+      name: itemName,
+      category: category,
+      checked: false
+    });
+    toast({
+      title: "Added to Shopping List",
+      description: `${itemName} added to your shopping list`
+    });
+  };
 
   return (
     <Layout>
@@ -21,13 +38,17 @@ export default function Home() {
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10">
+          <button
+            onClick={() => setLocation("/shopping-list")}
+            className="bg-blue-50 p-4 rounded-2xl border border-blue-100 hover:border-blue-200 transition-colors text-left"
+            data-testid="button-shopping-list"
+          >
             <div className="flex items-start justify-between mb-2">
-              <Package className="text-primary" size={24} />
-              <span className="text-2xl font-serif font-bold text-foreground">76</span>
+              <ShoppingCart className="text-blue-600" size={24} />
+              <span className="text-2xl font-serif font-bold text-foreground">{shoppingListCount}</span>
             </div>
-            <p className="text-xs text-muted-foreground font-medium">Total Items</p>
-          </div>
+            <p className="text-xs text-blue-700 font-medium">Shopping List</p>
+          </button>
           <button
             onClick={() => setLocation("/expired")}
             className="bg-amber-50 p-4 rounded-2xl border border-amber-100 hover:border-amber-200 transition-colors text-left w-full"
@@ -50,8 +71,8 @@ export default function Home() {
           
           <div className="space-y-3">
             {[
-              { name: "Almond Milk", amount: "10% left", icon: "🥛" },
-              { name: "Olive Oil", amount: "1 bottle", icon: "🫒" },
+              { name: "Almond Milk", amount: "10% left", icon: "🥛", category: "refrigerated" },
+              { name: "Olive Oil", amount: "1 bottle", icon: "🫒", category: "bulk" },
             ].map((item, i) => (
               <div key={i} className="flex items-center gap-4 p-3 bg-card rounded-xl border border-border shadow-sm">
                 <div className="h-10 w-10 bg-muted rounded-full flex items-center justify-center text-lg">
@@ -64,7 +85,11 @@ export default function Home() {
                     {item.amount}
                   </p>
                 </div>
-                <button className="text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded-lg font-medium">
+                <button 
+                  onClick={() => handleRestock(item.name, item.category)}
+                  className="text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                  data-testid={`button-restock-${item.name.replace(/\s+/g, '-').toLowerCase()}`}
+                >
                   Restock
                 </button>
               </div>
