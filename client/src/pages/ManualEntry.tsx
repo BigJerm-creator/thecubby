@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { KITCHEN_CATEGORIES } from "@/lib/mockData";
 import { useToast } from "@/hooks/use-toast";
+import { useInventory } from "@/lib/InventoryContext";
 import { motion } from "framer-motion";
 
 const UNIT_OPTIONS = [
@@ -23,6 +24,7 @@ const UNIT_OPTIONS = [
 export default function ManualEntry() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { addItem } = useInventory();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -64,6 +66,17 @@ export default function ManualEntry() {
     
     // Simulate submission delay
     setTimeout(() => {
+      // Add item to inventory
+      addItem({
+        id: `${Date.now()}`,
+        name: formData.name,
+        brand: formData.brand,
+        quantity: parseFloat(formData.quantity),
+        unit: formData.unit,
+        expiryDate: formData.expiryDate || undefined,
+        category: formData.category
+      });
+
       toast({
         title: "Item Added!",
         description: `${formData.name} has been added to ${formData.category}`,

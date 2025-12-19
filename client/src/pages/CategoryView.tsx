@@ -1,20 +1,21 @@
 import Layout from "@/components/layout";
 import { Link, useRoute, useLocation } from "wouter";
-import { MOCK_INVENTORY, KITCHEN_CATEGORIES } from "@/lib/mockData";
+import { KITCHEN_CATEGORIES } from "@/lib/mockData";
 import { ArrowLeft, Plus, Filter, MoreHorizontal, Calendar, Clock, Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useInventory } from "@/lib/InventoryContext";
 
 export default function CategoryView() {
   const [match, params] = useRoute("/category/:id");
   const [, setLocation] = useLocation();
   const categoryId = params?.id || "";
   const category = KITCHEN_CATEGORIES.find(c => c.id === categoryId);
-  const [items, setItems] = useState(MOCK_INVENTORY[categoryId] || []);
+  const { inventory, deleteItem } = useInventory();
+  const items = inventory[categoryId] || [];
 
   const handleDeleteItem = (itemId: string) => {
-    setItems(items.filter(item => item.id !== itemId));
+    deleteItem(categoryId, itemId);
   };
 
   if (!category) return <Layout><div>Category not found</div></Layout>;
