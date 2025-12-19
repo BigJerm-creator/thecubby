@@ -13,6 +13,7 @@ const UNIT_OPTIONS = [
   { value: "grams", label: "Grams" },
   { value: "ml", label: "Milliliters" },
   { value: "liters", label: "Liters" },
+  { value: "gal", label: "Gallon" },
   { value: "cups", label: "Cups" },
   { value: "tbsp", label: "Tablespoons" },
   { value: "tsp", label: "Teaspoons" },
