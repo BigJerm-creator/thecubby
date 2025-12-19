@@ -10,6 +10,7 @@ import Kitchen from "@/pages/Kitchen";
 import CategoryView from "@/pages/CategoryView";
 import Scan from "@/pages/Scan";
 import ManualEntry from "@/pages/ManualEntry";
+import ExpiredItems from "@/pages/ExpiredItems";
 import Search from "@/pages/Search";
 import Settings from "@/pages/Settings";
 
@@ -21,6 +22,7 @@ function Router() {
       <Route path="/category/:id" component={CategoryView} />
       <Route path="/scan" component={Scan} />
       <Route path="/manual-entry" component={ManualEntry} />
+      <Route path="/expired" component={ExpiredItems} />
       <Route path="/search" component={Search} />
       <Route path="/settings" component={Settings} />
       <Route component={NotFound} />

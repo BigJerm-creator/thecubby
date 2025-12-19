@@ -1,8 +1,13 @@
 import Layout from "@/components/layout";
 import { Package, AlertCircle, TrendingDown } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { useInventory } from "@/lib/InventoryContext";
 
 export default function Home() {
+  const [, setLocation] = useLocation();
+  const { getExpiredItems } = useInventory();
+  const expiredCount = getExpiredItems().length;
+
   return (
     <Layout>
       <div className="space-y-8">
@@ -23,13 +28,17 @@ export default function Home() {
             </div>
             <p className="text-xs text-muted-foreground font-medium">Total Items</p>
           </div>
-          <div className="bg-amber-50 p-4 rounded-2xl border border-amber-100">
+          <button
+            onClick={() => setLocation("/expired")}
+            className="bg-amber-50 p-4 rounded-2xl border border-amber-100 hover:border-amber-200 transition-colors text-left w-full"
+            data-testid="button-expired-items"
+          >
             <div className="flex items-start justify-between mb-2">
               <AlertCircle className="text-amber-600" size={24} />
-              <span className="text-2xl font-serif font-bold text-foreground">3</span>
+              <span className="text-2xl font-serif font-bold text-foreground">{expiredCount}</span>
             </div>
-            <p className="text-xs text-amber-700 font-medium">Expiring Soon</p>
-          </div>
+            <p className="text-xs text-amber-700 font-medium">Expired Items</p>
+          </button>
         </div>
 
         {/* Recent Activity / Low Stock */}
