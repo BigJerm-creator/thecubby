@@ -1,10 +1,12 @@
 import Layout from "@/components/layout";
 import { Link, useRoute, useLocation } from "wouter";
 import { KITCHEN_CATEGORIES } from "@/lib/mockData";
-import { ArrowLeft, Plus, Filter, MoreHorizontal, Calendar, Clock, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Filter, MoreHorizontal, Calendar, Clock, Trash2, ShoppingCart } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useInventory } from "@/lib/InventoryContext";
+import { useShoppingList } from "@/lib/ShoppingListContext";
+import { useToast } from "@/hooks/use-toast";
 
 export default function CategoryView() {
   const [match, params] = useRoute("/category/:id");
@@ -12,10 +14,24 @@ export default function CategoryView() {
   const categoryId = params?.id || "";
   const category = KITCHEN_CATEGORIES.find(c => c.id === categoryId);
   const { inventory, deleteItem } = useInventory();
+  const { addItem: addToShoppingList } = useShoppingList();
+  const { toast } = useToast();
   const items = inventory[categoryId] || [];
 
   const handleDeleteItem = (itemId: string) => {
     deleteItem(categoryId, itemId);
+  };
+
+  const handleAddToShoppingList = (itemName: string) => {
+    addToShoppingList({
+      name: itemName,
+      category: categoryId,
+      checked: false
+    });
+    toast({
+      title: "Added to Shopping List",
+      description: `${itemName} added to your shopping list`
+    });
   };
 
   if (!category) return <Layout><div>Category not found</div></Layout>;
@@ -78,13 +94,22 @@ export default function CategoryView() {
                   )}
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <div className="flex flex-col items-end">
                     <span className="text-lg font-serif font-medium text-primary">
                       {item.quantity} <span className="text-xs font-sans text-muted-foreground">{item.unit}</span>
                     </span>
                   </div>
                   
+                  <button 
+                    onClick={() => handleAddToShoppingList(item.name)}
+                    className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 hover:bg-blue-600 hover:text-blue-50 transition-colors"
+                    data-testid={`button-add-to-shopping-list-${item.id}`}
+                    title="Add to shopping list"
+                  >
+                    <ShoppingCart size={16} />
+                  </button>
+
                   <button 
                     onClick={() => handleDeleteItem(item.id)}
                     className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
