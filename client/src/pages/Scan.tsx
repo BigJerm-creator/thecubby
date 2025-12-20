@@ -54,8 +54,8 @@ export default function Scan() {
               // Simulate product lookup delay
               setTimeout(() => {
                   // In a real app, this would query a product API
-                  // For now, redirect to a "New Item" form with the code pre-filled
-                  setLocation(`/kitchen?new_item=${text}`);
+                  // For now, redirect to the manual entry form with the barcode pre-filled
+                  setLocation(`/manual-entry?barcode=${encodeURIComponent(text)}`);
               }, 1500);
             }
           }

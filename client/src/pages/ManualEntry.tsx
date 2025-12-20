@@ -1,6 +1,6 @@
 import Layout from "@/components/layout";
 import { ArrowLeft, Plus, Check } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { KITCHEN_CATEGORIES } from "@/lib/mockData";
 import { useToast } from "@/hooks/use-toast";
@@ -36,6 +36,15 @@ export default function ManualEntry() {
     unit: "oz",
     expiryDate: "",
   });
+
+  // Check for barcode in query params and pre-fill the name
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const barcode = params.get("barcode");
+    if (barcode) {
+      setFormData(prev => ({ ...prev, name: barcode }));
+    }
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
