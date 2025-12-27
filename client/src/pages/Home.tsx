@@ -31,7 +31,7 @@ export default function Home() {
         <header className="pt-6">
           <span className="text-xs font-bold tracking-[0.2em] text-muted-foreground uppercase mb-2 block">The Cubby</span>
           <h1 className="text-4xl font-serif text-foreground leading-tight">
-            Good Morning,<br />
+            Hello,<br />
             <span className="text-primary">Chef.</span>
           </h1>
         </header>
