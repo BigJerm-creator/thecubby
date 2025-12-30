@@ -1,29 +1,15 @@
 import Layout from "@/components/layout";
-import { Package, AlertCircle, TrendingDown, ShoppingCart, ChefHat } from "lucide-react";
+import { Package, AlertCircle, ShoppingCart, ChefHat } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useInventory } from "@/lib/InventoryContext";
 import { useShoppingList } from "@/lib/ShoppingListContext";
-import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
   const [, setLocation] = useLocation();
-  const { getExpiredItems, inventory } = useInventory();
-  const { addItem: addToShoppingList, items: shoppingItems } = useShoppingList();
-  const { toast } = useToast();
+  const { getExpiredItems } = useInventory();
+  const { items: shoppingItems } = useShoppingList();
   const expiredCount = getExpiredItems().length;
   const shoppingListCount = shoppingItems.filter(item => !item.checked).length;
-
-  const handleRestock = (itemName: string, category: string) => {
-    addToShoppingList({
-      name: itemName,
-      category: category,
-      checked: false
-    });
-    toast({
-      title: "Added to Shopping List",
-      description: `${itemName} added to your shopping list`
-    });
-  };
 
   return (
     <Layout>
@@ -84,31 +70,8 @@ export default function Home() {
             <Link href="/kitchen" className="text-xs text-primary font-bold tracking-wide uppercase">View All</Link>
           </div>
           
-          <div className="space-y-3">
-            {[
-              { name: "Almond Milk", amount: "10% left", icon: "🥛", category: "refrigerated" },
-              { name: "Olive Oil", amount: "1 bottle", icon: "🫒", category: "bulk" },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-4 p-3 bg-card rounded-xl border border-border shadow-sm">
-                <div className="h-10 w-10 bg-muted rounded-full flex items-center justify-center text-lg">
-                  {item.icon}
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-medium text-foreground text-sm">{item.name}</h3>
-                  <p className="text-xs text-destructive font-medium flex items-center gap-1">
-                    <TrendingDown size={12} />
-                    {item.amount}
-                  </p>
-                </div>
-                <button 
-                  onClick={() => handleRestock(item.name, item.category)}
-                  className="text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded-lg font-medium hover:bg-primary/90 transition-colors"
-                  data-testid={`button-restock-${item.name.replace(/\s+/g, '-').toLowerCase()}`}
-                >
-                  Restock
-                </button>
-              </div>
-            ))}
+          <div className="p-4 bg-card rounded-xl border border-border text-center">
+            <p className="text-sm text-muted-foreground">No low stock items. Your pantry is well stocked!</p>
           </div>
         </section>
 
