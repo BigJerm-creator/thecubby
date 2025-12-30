@@ -3,6 +3,7 @@ import { KITCHEN_CATEGORIES } from "@/lib/mockData";
 import { Link } from "wouter";
 import { ArrowRight, Leaf, Snowflake, Milk, Package, Weight, Archive } from "lucide-react";
 import { motion } from "framer-motion";
+import { useInventory } from "@/lib/InventoryContext";
 
 const container = {
   hidden: { opacity: 0 },
@@ -20,6 +21,12 @@ const item = {
 };
 
 export default function Kitchen() {
+  const { inventory } = useInventory();
+
+  const getCategoryCount = (categoryId: string) => {
+    return inventory[categoryId]?.length || 0;
+  };
+
   const getIcon = (id: string) => {
     switch (id) {
       case 'spices': return Leaf;
@@ -61,7 +68,7 @@ export default function Kitchen() {
                       </div>
                       <div>
                         <h3 className="font-serif text-lg text-foreground font-medium group-hover:text-primary transition-colors">{category.name}</h3>
-                        <p className="text-muted-foreground text-xs font-medium">{category.count} items</p>
+                        <p className="text-muted-foreground text-xs font-medium">{getCategoryCount(category.id)} items</p>
                       </div>
                     </div>
                     <div className="text-muted-foreground group-hover:translate-x-1 transition-transform">

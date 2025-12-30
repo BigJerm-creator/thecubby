@@ -1,13 +1,13 @@
 import Layout from "@/components/layout";
 import { Search as SearchIcon, X } from "lucide-react";
 import { useState } from "react";
-import { MOCK_INVENTORY } from "@/lib/mockData";
-import { Link } from "wouter";
+import { useInventory } from "@/lib/InventoryContext";
 
 export default function Search() {
   const [query, setQuery] = useState("");
+  const { inventory } = useInventory();
 
-  const allItems = Object.values(MOCK_INVENTORY).flat();
+  const allItems = Object.values(inventory).flat();
   const results = query 
     ? allItems.filter(item => item.name.toLowerCase().includes(query.toLowerCase()))
     : [];
@@ -46,7 +46,7 @@ export default function Search() {
                 <div key={item.id} className="flex items-center justify-between p-4 bg-card rounded-xl border border-border">
                   <div>
                     <h3 className="font-medium text-foreground">{item.name}</h3>
-                    <p className="text-xs text-muted-foreground">{item.brand} • {item.category}</p>
+                    <p className="text-xs text-muted-foreground">{item.brand ? `${item.brand} • ` : ''}{item.category}</p>
                   </div>
                   <span className="font-medium text-primary">{item.quantity} {item.unit}</span>
                 </div>
