@@ -1,9 +1,8 @@
 import Layout from "@/components/layout";
 import { Link, useRoute, useLocation } from "wouter";
 import { KITCHEN_CATEGORIES } from "@/lib/mockData";
-import { ArrowLeft, Plus, Filter, MoreHorizontal, Calendar, Clock, Trash2, ShoppingCart } from "lucide-react";
+import { ArrowLeft, Plus, Filter, MoreHorizontal, Calendar, Trash2, ShoppingCart, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
 import { useInventory } from "@/lib/InventoryContext";
 import { useShoppingList } from "@/lib/ShoppingListContext";
 import { useToast } from "@/hooks/use-toast";
@@ -13,17 +12,21 @@ export default function CategoryView() {
   const [, setLocation] = useLocation();
   const categoryId = params?.id || "";
   const category = KITCHEN_CATEGORIES.find(c => c.id === categoryId);
-  const { inventory, deleteItem } = useInventory();
+  const { inventory, deleteItem, isLoading } = useInventory();
   const { addItem: addToShoppingList } = useShoppingList();
   const { toast } = useToast();
   const items = inventory[categoryId] || [];
 
-  const handleDeleteItem = (itemId: string) => {
-    deleteItem(categoryId, itemId);
+  const handleDeleteItem = async (itemId: number) => {
+    await deleteItem(categoryId, itemId);
+    toast({
+      title: "Item Removed",
+      description: "Item has been deleted from inventory"
+    });
   };
 
-  const handleAddToShoppingList = (itemName: string) => {
-    addToShoppingList({
+  const handleAddToShoppingList = async (itemName: string) => {
+    await addToShoppingList({
       name: itemName,
       category: categoryId,
       checked: false
@@ -36,10 +39,19 @@ export default function CategoryView() {
 
   if (!category) return <Layout><div>Category not found</div></Layout>;
 
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between pt-4 pb-2">
           <Link href="/kitchen">
             <button className="p-2 -ml-2 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground">
@@ -61,7 +73,6 @@ export default function CategoryView() {
           <p className="text-muted-foreground text-sm mt-1">{items.length} items in inventory</p>
         </div>
 
-        {/* Inventory List */}
         <div className="space-y-3">
           {items.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed border-border rounded-xl">
@@ -125,7 +136,6 @@ export default function CategoryView() {
         </div>
       </div>
       
-      {/* Floating Action Button */}
       <div className="fixed bottom-24 right-6 z-30">
         <button 
           onClick={() => setLocation("/scan")}

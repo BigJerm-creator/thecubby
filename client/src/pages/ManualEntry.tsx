@@ -37,7 +37,6 @@ export default function ManualEntry() {
     expiryDate: "",
   });
 
-  // Check for barcode in query params and pre-fill the name
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const barcode = params.get("barcode");
@@ -74,16 +73,13 @@ export default function ManualEntry() {
 
     setIsSubmitting(true);
     
-    // Simulate submission delay
-    setTimeout(() => {
-      // Add item to inventory
-      addItem({
-        id: `${Date.now()}`,
+    try {
+      await addItem({
         name: formData.name,
-        brand: formData.brand,
+        brand: formData.brand || null,
         quantity: parseFloat(formData.quantity),
         unit: formData.unit,
-        expiryDate: formData.expiryDate || undefined,
+        expiryDate: formData.expiryDate || null,
         category: formData.category
       });
 
@@ -93,15 +89,21 @@ export default function ManualEntry() {
         action: <Check className="h-4 w-4 text-green-500" />
       });
       
-      // Redirect to the category page
       setLocation(`/category/${formData.category}`);
-    }, 800);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add item. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <Layout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center gap-3 pt-4 pb-2">
           <button 
             onClick={() => setLocation("/scan")}
@@ -116,14 +118,12 @@ export default function ManualEntry() {
           </div>
         </div>
 
-        {/* Form */}
         <motion.form
           onSubmit={handleSubmit}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           className="space-y-4"
         >
-          {/* Product Name */}
           <div>
             <label className="text-sm font-medium text-foreground block mb-2">
               Product Name *
@@ -139,7 +139,6 @@ export default function ManualEntry() {
             />
           </div>
 
-          {/* Brand */}
           <div>
             <label className="text-sm font-medium text-foreground block mb-2">
               Brand
@@ -155,7 +154,6 @@ export default function ManualEntry() {
             />
           </div>
 
-          {/* Category */}
           <div>
             <label className="text-sm font-medium text-foreground block mb-2">
               Category *
@@ -173,7 +171,6 @@ export default function ManualEntry() {
             </select>
           </div>
 
-          {/* Quantity and Unit */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-sm font-medium text-foreground block mb-2">
@@ -210,7 +207,6 @@ export default function ManualEntry() {
             </div>
           </div>
 
-          {/* Expiry Date */}
           <div>
             <label className="text-sm font-medium text-foreground block mb-2">
               Expiry Date (Optional)
@@ -225,7 +221,6 @@ export default function ManualEntry() {
             />
           </div>
 
-          {/* Submit Button */}
           <div className="pt-4">
             <button
               type="submit"

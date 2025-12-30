@@ -1,7 +1,9 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, ReactNode } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from './queryClient';
 
 export interface ShoppingListItem {
-  id: string;
+  id: number;
   name: string;
   category: string;
   checked: boolean;
@@ -10,64 +12,68 @@ export interface ShoppingListItem {
 
 interface ShoppingListContextType {
   items: ShoppingListItem[];
-  addItem: (item: Omit<ShoppingListItem, 'id' | 'createdAt'>) => void;
-  removeItem: (itemId: string) => void;
-  toggleItem: (itemId: string) => void;
-  clearCompleted: () => void;
+  addItem: (item: Omit<ShoppingListItem, 'id' | 'createdAt'>) => Promise<void>;
+  removeItem: (itemId: number) => Promise<void>;
+  toggleItem: (itemId: number, checked: boolean) => Promise<void>;
+  clearCompleted: () => Promise<void>;
+  isLoading: boolean;
 }
 
 const ShoppingListContext = createContext<ShoppingListContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'shopping_list';
-
 export function ShoppingListProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<ShoppingListItem[]>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch (e) {
-      console.error('Failed to load shopping list from storage:', e);
-    }
-    return [];
+  const queryClient = useQueryClient();
+
+  const { data: items = [], isLoading } = useQuery<ShoppingListItem[]>({
+    queryKey: ['/api/shopping-list'],
   });
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    } catch (e) {
-      console.error('Failed to save shopping list to storage:', e);
-    }
-  }, [items]);
+  const addMutation = useMutation({
+    mutationFn: async (item: Omit<ShoppingListItem, 'id' | 'createdAt'>) => {
+      await apiRequest('POST', '/api/shopping-list', item);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/shopping-list'] });
+    },
+  });
 
-  const addItem = (item: Omit<ShoppingListItem, 'id' | 'createdAt'>) => {
-    const newItem: ShoppingListItem = {
-      ...item,
-      id: `${Date.now()}-${Math.random()}`,
-      createdAt: new Date().toISOString()
-    };
-    setItems(prev => [newItem, ...prev]);
+  const deleteMutation = useMutation({
+    mutationFn: async (itemId: number) => {
+      await apiRequest('DELETE', `/api/shopping-list/${itemId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/shopping-list'] });
+    },
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: async ({ itemId, checked }: { itemId: number; checked: boolean }) => {
+      await apiRequest('PATCH', `/api/shopping-list/${itemId}`, { checked });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/shopping-list'] });
+    },
+  });
+
+  const addItem = async (item: Omit<ShoppingListItem, 'id' | 'createdAt'>) => {
+    await addMutation.mutateAsync(item);
   };
 
-  const removeItem = (itemId: string) => {
-    setItems(prev => prev.filter(item => item.id !== itemId));
+  const removeItem = async (itemId: number) => {
+    await deleteMutation.mutateAsync(itemId);
   };
 
-  const toggleItem = (itemId: string) => {
-    setItems(prev =>
-      prev.map(item =>
-        item.id === itemId ? { ...item, checked: !item.checked } : item
-      )
-    );
+  const toggleItem = async (itemId: number, checked: boolean) => {
+    await toggleMutation.mutateAsync({ itemId, checked });
   };
 
-  const clearCompleted = () => {
-    setItems(prev => prev.filter(item => !item.checked));
+  const clearCompleted = async () => {
+    const completedItems = items.filter(item => item.checked);
+    await Promise.all(completedItems.map(item => deleteMutation.mutateAsync(item.id)));
   };
 
   return (
-    <ShoppingListContext.Provider value={{ items, addItem, removeItem, toggleItem, clearCompleted }}>
+    <ShoppingListContext.Provider value={{ items, addItem, removeItem, toggleItem, clearCompleted, isLoading }}>
       {children}
     </ShoppingListContext.Provider>
   );

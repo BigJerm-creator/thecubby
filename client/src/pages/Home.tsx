@@ -1,5 +1,5 @@
 import Layout from "@/components/layout";
-import { Package, AlertCircle, TrendingDown, ShoppingCart } from "lucide-react";
+import { Package, AlertCircle, TrendingDown, ShoppingCart, ChefHat } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useInventory } from "@/lib/InventoryContext";
 import { useShoppingList } from "@/lib/ShoppingListContext";
@@ -61,6 +61,21 @@ export default function Home() {
             <p className="text-xs text-amber-700 font-medium">Expired Items</p>
           </button>
         </div>
+
+        {/* Recipe Generator */}
+        <button
+          onClick={() => setLocation("/recipes")}
+          className="w-full bg-gradient-to-r from-primary/10 to-primary/5 p-4 rounded-2xl border border-primary/20 hover:border-primary/40 transition-colors text-left flex items-center gap-4"
+          data-testid="button-recipe-generator"
+        >
+          <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
+            <ChefHat className="text-primary" size={24} />
+          </div>
+          <div>
+            <h3 className="font-serif font-medium text-foreground">Recipe Generator</h3>
+            <p className="text-xs text-muted-foreground">Create recipes from your ingredients using AI</p>
+          </div>
+        </button>
 
         {/* Recent Activity / Low Stock */}
         <section>

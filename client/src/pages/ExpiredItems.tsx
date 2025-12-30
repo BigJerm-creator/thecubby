@@ -1,28 +1,37 @@
 import Layout from "@/components/layout";
-import { ArrowLeft, Trash2, AlertTriangle, Calendar } from "lucide-react";
+import { ArrowLeft, Trash2, AlertTriangle, Calendar, Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
-import { useInventory } from "@/lib/InventoryContext";
+import { useInventory, InventoryItem } from "@/lib/InventoryContext";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 
 export default function ExpiredItems() {
   const [, setLocation] = useLocation();
-  const { getExpiredItems, deleteItem } = useInventory();
+  const { getExpiredItems, deleteItem, isLoading } = useInventory();
   const { toast } = useToast();
   const expiredItems = getExpiredItems();
 
-  const handleDelete = (item: any) => {
-    deleteItem(item.category, item.id);
+  const handleDelete = async (item: InventoryItem) => {
+    await deleteItem(item.category, item.id);
     toast({
       title: "Item Removed",
       description: `${item.name} has been removed from inventory.`
     });
   };
 
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center gap-3 pt-4 pb-2">
           <button 
             onClick={() => setLocation("/")}
@@ -37,7 +46,6 @@ export default function ExpiredItems() {
           </div>
         </div>
 
-        {/* Expired Items List */}
         <div className="space-y-3">
           {expiredItems.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed border-border rounded-xl">

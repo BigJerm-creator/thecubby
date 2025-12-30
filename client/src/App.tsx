@@ -15,6 +15,7 @@ import ExpiredItems from "@/pages/ExpiredItems";
 import ShoppingListPage from "@/pages/ShoppingList";
 import Search from "@/pages/Search";
 import Settings from "@/pages/Settings";
+import RecipeGenerator from "@/pages/RecipeGenerator";
 
 function Router() {
   return (
@@ -28,6 +29,7 @@ function Router() {
       <Route path="/shopping-list" component={ShoppingListPage} />
       <Route path="/search" component={Search} />
       <Route path="/settings" component={Settings} />
+      <Route path="/recipes" component={RecipeGenerator} />
       <Route component={NotFound} />
     </Switch>
   );

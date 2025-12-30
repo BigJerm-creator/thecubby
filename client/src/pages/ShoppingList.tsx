@@ -1,22 +1,29 @@
 import Layout from "@/components/layout";
-import { ArrowLeft, Trash2, Check, ShoppingCart } from "lucide-react";
+import { ArrowLeft, Trash2, Check, ShoppingCart, Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useShoppingList } from "@/lib/ShoppingListContext";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
 
 export default function ShoppingListPage() {
   const [, setLocation] = useLocation();
-  const { items, removeItem, toggleItem, clearCompleted } = useShoppingList();
-  const [showClearModal, setShowClearModal] = useState(false);
+  const { items, removeItem, toggleItem, clearCompleted, isLoading } = useShoppingList();
 
   const checkedCount = items.filter(item => item.checked).length;
   const uncheckedCount = items.filter(item => !item.checked).length;
 
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </Layout>
+    );
+  }
+
   return (
     <Layout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center gap-3 pt-4 pb-2">
           <button 
             onClick={() => setLocation("/")}
@@ -31,7 +38,6 @@ export default function ShoppingListPage() {
           </div>
         </div>
 
-        {/* Shopping List Items */}
         <div className="space-y-3">
           {items.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed border-border rounded-xl">
@@ -41,8 +47,7 @@ export default function ShoppingListPage() {
             </div>
           ) : (
             <AnimatePresence>
-              {/* Unchecked Items */}
-              {items.filter(item => !item.checked).map((item, index) => (
+              {items.filter(item => !item.checked).map((item) => (
                 <motion.div
                   key={item.id}
                   initial={{ opacity: 0, x: -20 }}
@@ -52,7 +57,7 @@ export default function ShoppingListPage() {
                   data-testid={`shopping-item-${item.id}`}
                 >
                   <button
-                    onClick={() => toggleItem(item.id)}
+                    onClick={() => toggleItem(item.id, true)}
                     className="flex items-center gap-3 flex-1 text-left"
                     data-testid={`button-toggle-shopping-${item.id}`}
                   >
@@ -75,7 +80,6 @@ export default function ShoppingListPage() {
                 </motion.div>
               ))}
 
-              {/* Checked Items (Completed) */}
               {items.filter(item => item.checked).length > 0 && (
                 <div className="space-y-3 mt-6">
                   <div className="px-1">
@@ -90,7 +94,7 @@ export default function ShoppingListPage() {
                       className="bg-muted/30 border border-muted/50 p-4 rounded-xl shadow-sm flex justify-between items-center group opacity-60"
                     >
                       <button
-                        onClick={() => toggleItem(item.id)}
+                        onClick={() => toggleItem(item.id, false)}
                         className="flex items-center gap-3 flex-1 text-left"
                         data-testid={`button-uncheck-shopping-${item.id}`}
                       >
@@ -118,7 +122,6 @@ export default function ShoppingListPage() {
           )}
         </div>
 
-        {/* Clear Completed Button */}
         {checkedCount > 0 && (
           <button
             onClick={() => clearCompleted()}

@@ -1,92 +1,81 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { MOCK_INVENTORY } from './mockData';
+import React, { createContext, useContext, ReactNode } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from './queryClient';
 
 export interface InventoryItem {
-  id: string;
+  id: number;
   name: string;
-  brand: string;
+  brand: string | null;
   quantity: number;
   unit: string;
-  expiryDate?: string;
+  expiryDate?: string | null;
   category: string;
+  barcode?: string | null;
+  createdAt: string;
 }
 
 interface InventoryContextType {
   inventory: Record<string, InventoryItem[]>;
-  addItem: (item: InventoryItem) => void;
-  deleteItem: (categoryId: string, itemId: string) => void;
+  addItem: (item: Omit<InventoryItem, 'id' | 'createdAt'>) => Promise<void>;
+  deleteItem: (categoryId: string, itemId: number) => Promise<void>;
   getExpiredItems: () => InventoryItem[];
+  isLoading: boolean;
+  expiredItems: InventoryItem[];
 }
 
 const InventoryContext = createContext<InventoryContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'inventory_data';
-
 export function InventoryProvider({ children }: { children: ReactNode }) {
-  const [inventory, setInventory] = useState<Record<string, InventoryItem[]>>(() => {
-    // Try to load from localStorage first
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch (e) {
-      console.error('Failed to load inventory from storage:', e);
-    }
-    // Fall back to mock data
-    return { ...MOCK_INVENTORY };
+  const queryClient = useQueryClient();
+
+  const { data: allItems = [], isLoading } = useQuery<InventoryItem[]>({
+    queryKey: ['/api/inventory'],
   });
 
-  // Persist to localStorage whenever inventory changes
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(inventory));
-    } catch (e) {
-      console.error('Failed to save inventory to storage:', e);
+  const { data: expiredItems = [] } = useQuery<InventoryItem[]>({
+    queryKey: ['/api/inventory/expired'],
+  });
+
+  const inventory = allItems.reduce((acc, item) => {
+    if (!acc[item.category]) {
+      acc[item.category] = [];
     }
-  }, [inventory]);
+    acc[item.category].push(item);
+    return acc;
+  }, {} as Record<string, InventoryItem[]>);
 
-  const addItem = (item: InventoryItem) => {
-    setInventory(prev => ({
-      ...prev,
-      [item.category]: [
-        ...(prev[item.category] || []),
-        { ...item, id: `${Date.now()}-${Math.random()}` }
-      ]
-    }));
+  const addMutation = useMutation({
+    mutationFn: async (item: Omit<InventoryItem, 'id' | 'createdAt'>) => {
+      await apiRequest('POST', '/api/inventory', item);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/inventory/expired'] });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (itemId: number) => {
+      await apiRequest('DELETE', `/api/inventory/${itemId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/inventory/expired'] });
+    },
+  });
+
+  const addItem = async (item: Omit<InventoryItem, 'id' | 'createdAt'>) => {
+    await addMutation.mutateAsync(item);
   };
 
-  const deleteItem = (categoryId: string, itemId: string) => {
-    setInventory(prev => ({
-      ...prev,
-      [categoryId]: (prev[categoryId] || []).filter(item => item.id !== itemId)
-    }));
+  const deleteItem = async (_categoryId: string, itemId: number) => {
+    await deleteMutation.mutateAsync(itemId);
   };
 
-  const getExpiredItems = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const expired: InventoryItem[] = [];
-    Object.values(inventory).forEach(items => {
-      items.forEach(item => {
-        if (item.expiryDate) {
-          const expiryDate = new Date(item.expiryDate);
-          expiryDate.setHours(0, 0, 0, 0);
-          if (expiryDate < today) {
-            expired.push(item);
-          }
-        }
-      });
-    });
-    return expired.sort((a, b) => {
-      if (!a.expiryDate || !b.expiryDate) return 0;
-      return new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime();
-    });
-  };
+  const getExpiredItems = () => expiredItems;
 
   return (
-    <InventoryContext.Provider value={{ inventory, addItem, deleteItem, getExpiredItems }}>
+    <InventoryContext.Provider value={{ inventory, addItem, deleteItem, getExpiredItems, isLoading, expiredItems }}>
       {children}
     </InventoryContext.Provider>
   );
