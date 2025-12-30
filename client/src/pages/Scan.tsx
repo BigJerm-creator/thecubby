@@ -38,7 +38,7 @@ export default function Scan() {
       // Start decoding from video stream
       if (codeReaderRef.current && videoRef.current) {
         codeReaderRef.current.decodeFromVideoDevice(
-          undefined, 
+          null, 
           videoRef.current, 
           (result, err) => {
             if (result) {
@@ -47,16 +47,34 @@ export default function Scan() {
               stopCamera();
               toast({
                 title: "Item Scanned!",
-                description: `Found barcode: ${text}`,
+                description: `Looking up product...`,
                 action: <Check className="h-4 w-4 text-green-500" />
               });
               
-              // Simulate product lookup delay
-              setTimeout(() => {
-                  // In a real app, this would query a product API
-                  // For now, redirect to the manual entry form with the barcode pre-filled
+              fetch(`/api/upc/${encodeURIComponent(text)}`)
+                .then(res => res.json())
+                .then(data => {
+                  const params = new URLSearchParams();
+                  params.set('barcode', text);
+                  if (data.found) {
+                    if (data.name) params.set('name', data.name);
+                    if (data.brand) params.set('brand', data.brand);
+                    if (data.category) params.set('category', data.category);
+                    toast({
+                      title: "Product Found!",
+                      description: data.name || "Product data retrieved",
+                    });
+                  } else {
+                    toast({
+                      title: "Product not found",
+                      description: "Enter details manually",
+                    });
+                  }
+                  setLocation(`/manual-entry?${params.toString()}`);
+                })
+                .catch(() => {
                   setLocation(`/manual-entry?barcode=${encodeURIComponent(text)}`);
-              }, 1500);
+                });
             }
           }
         ).catch(err => console.error("Decode error:", err));

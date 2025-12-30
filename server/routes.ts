@@ -9,10 +9,85 @@ const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
 
+function guessCategory(categories: string[]): string {
+  const categoryMap: Record<string, string> = {
+    'spices': 'spices',
+    'seasonings': 'spices',
+    'herbs': 'spices',
+    'dairy': 'refrigerated',
+    'milk': 'refrigerated',
+    'cheese': 'refrigerated',
+    'yogurt': 'refrigerated',
+    'refrigerated': 'refrigerated',
+    'frozen': 'frozen',
+    'ice cream': 'frozen',
+    'canned': 'canned',
+    'preserved': 'canned',
+    'cereal': 'boxed',
+    'pasta': 'boxed',
+    'crackers': 'boxed',
+    'rice': 'bulk',
+    'grains': 'bulk',
+    'flour': 'bulk',
+    'sugar': 'bulk',
+    'beans': 'bulk',
+    'lentils': 'bulk',
+  };
+  
+  const normalized = categories.map(c => c.toLowerCase().replace(/^en:/, ''));
+  for (const cat of normalized) {
+    for (const [keyword, category] of Object.entries(categoryMap)) {
+      if (cat.includes(keyword)) {
+        return category;
+      }
+    }
+  }
+  return 'boxed';
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+
+  app.get("/api/upc/:barcode", async (req, res) => {
+    const { barcode } = req.params;
+    
+    try {
+      const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
+      const data = await response.json();
+      
+      if (data.status === 1 && data.product) {
+        const product = data.product;
+        res.json({
+          found: true,
+          name: product.product_name || product.generic_name || null,
+          brand: product.brands || null,
+          category: guessCategory(product.categories_tags || []),
+          quantity: product.quantity || null,
+        });
+      } else {
+        const upcResponse = await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${barcode}`);
+        const upcData = await upcResponse.json();
+        
+        if (upcData.items && upcData.items.length > 0) {
+          const item = upcData.items[0];
+          res.json({
+            found: true,
+            name: item.title || null,
+            brand: item.brand || null,
+            category: guessCategory(item.category ? [item.category] : []),
+            quantity: null,
+          });
+        } else {
+          res.json({ found: false });
+        }
+      }
+    } catch (error) {
+      console.error("UPC lookup error:", error);
+      res.json({ found: false, error: "Lookup failed" });
+    }
+  });
 
   app.get("/api/inventory", async (req, res) => {
     try {

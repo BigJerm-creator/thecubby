@@ -39,10 +39,17 @@ export default function ManualEntry() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    const name = params.get("name");
+    const brand = params.get("brand");
+    const category = params.get("category");
     const barcode = params.get("barcode");
-    if (barcode) {
-      setFormData(prev => ({ ...prev, name: barcode }));
-    }
+    
+    setFormData(prev => ({
+      ...prev,
+      name: name || (barcode ? `Product (${barcode})` : prev.name),
+      brand: brand || prev.brand,
+      category: category || prev.category,
+    }));
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
