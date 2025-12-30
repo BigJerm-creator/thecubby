@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, serial, integer, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, serial, integer, timestamp, boolean, doublePrecision } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -21,7 +21,7 @@ export const inventoryItems = pgTable("inventory_items", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   brand: text("brand"),
-  quantity: integer("quantity").notNull().default(1),
+  quantity: doublePrecision("quantity").notNull().default(1),
   unit: text("unit").notNull().default("count"),
   category: text("category").notNull(),
   expiryDate: text("expiry_date"),
@@ -29,7 +29,11 @@ export const inventoryItems = pgTable("inventory_items", {
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
-export const insertInventoryItemSchema = createInsertSchema(inventoryItems).omit({
+export const insertInventoryItemSchema = createInsertSchema(inventoryItems, {
+  brand: z.string().nullable().optional(),
+  expiryDate: z.string().nullable().optional(),
+  barcode: z.string().nullable().optional(),
+}).omit({
   id: true,
   createdAt: true,
 });
@@ -48,6 +52,7 @@ export const shoppingListItems = pgTable("shopping_list_items", {
 export const insertShoppingListItemSchema = createInsertSchema(shoppingListItems).omit({
   id: true,
   createdAt: true,
+  checked: true,
 });
 
 export type InsertShoppingListItem = z.infer<typeof insertShoppingListItemSchema>;

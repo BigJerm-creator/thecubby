@@ -46,7 +46,16 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
 
   const addMutation = useMutation({
     mutationFn: async (item: Omit<InventoryItem, 'id' | 'createdAt'>) => {
-      await apiRequest('POST', '/api/inventory', item);
+      const cleanItem: Record<string, unknown> = {
+        name: item.name,
+        quantity: item.quantity,
+        unit: item.unit,
+        category: item.category,
+      };
+      if (item.brand) cleanItem.brand = item.brand;
+      if (item.expiryDate) cleanItem.expiryDate = item.expiryDate;
+      if (item.barcode) cleanItem.barcode = item.barcode;
+      await apiRequest('POST', '/api/inventory', cleanItem);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });

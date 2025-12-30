@@ -29,8 +29,8 @@ export function ShoppingListProvider({ children }: { children: ReactNode }) {
   });
 
   const addMutation = useMutation({
-    mutationFn: async (item: Omit<ShoppingListItem, 'id' | 'createdAt'>) => {
-      await apiRequest('POST', '/api/shopping-list', item);
+    mutationFn: async (item: { name: string; category: string; checked?: boolean }) => {
+      await apiRequest('POST', '/api/shopping-list', { name: item.name, category: item.category });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/shopping-list'] });
@@ -69,7 +69,10 @@ export function ShoppingListProvider({ children }: { children: ReactNode }) {
 
   const clearCompleted = async () => {
     const completedItems = items.filter(item => item.checked);
-    await Promise.all(completedItems.map(item => deleteMutation.mutateAsync(item.id)));
+    for (const item of completedItems) {
+      await apiRequest('DELETE', `/api/shopping-list/${item.id}`);
+    }
+    queryClient.invalidateQueries({ queryKey: ['/api/shopping-list'] });
   };
 
   return (
