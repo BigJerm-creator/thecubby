@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertInventoryItemSchema, insertShoppingListItemSchema } from "@shared/schema";
+import { insertInventoryItemSchema, insertShoppingListItemSchema, insertUserProfileSchema } from "@shared/schema";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
@@ -191,13 +191,50 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/profile", async (req, res) => {
+    try {
+      const profile = await storage.getUserProfile();
+      res.json(profile || null);
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      res.status(500).json({ error: "Failed to fetch profile" });
+    }
+  });
+
+  app.post("/api/profile", async (req, res) => {
+    try {
+      const parsed = insertUserProfileSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.message });
+      }
+      const profile = await storage.upsertUserProfile(parsed.data);
+      res.json(profile);
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      res.status(500).json({ error: "Failed to save profile" });
+    }
+  });
+
   app.post("/api/generate-recipe", async (req, res) => {
     try {
       const items = await storage.getInventoryItems();
+      const profile = await storage.getUserProfile();
       const ingredientsList = items.map(item => `${item.quantity} ${item.unit} ${item.name}${item.brand ? ` (${item.brand})` : ''}`).join(", ");
       
       if (items.length === 0) {
         return res.status(400).json({ error: "No ingredients in your pantry. Add some items first!" });
+      }
+
+      let dietaryContext = "";
+      if (profile) {
+        const prefs = profile.dietaryPreferences || [];
+        const restrictions = profile.restrictions || [];
+        if (prefs.length > 0) {
+          dietaryContext += `Dietary preferences: ${prefs.join(", ")}. `;
+        }
+        if (restrictions.length > 0) {
+          dietaryContext += `Food restrictions (MUST AVOID): ${restrictions.join(", ")}. `;
+        }
       }
 
       res.setHeader("Content-Type", "text/event-stream");
@@ -209,7 +246,7 @@ export async function registerRoutes(
         messages: [
           {
             role: "system",
-            content: "You are a helpful chef assistant. Generate a delicious recipe using the available ingredients. Format your response with clear sections: Recipe Name, Prep Time, Cook Time, Servings, Ingredients (list which ones from the pantry you're using), Instructions (numbered steps), and Tips. Be creative but practical."
+            content: `You are a helpful chef assistant. Generate a delicious recipe using the available ingredients. ${dietaryContext}Format your response with clear sections: Recipe Name, Prep Time, Cook Time, Servings, Ingredients (list which ones from the pantry you're using), Instructions (numbered steps), and Tips. Be creative but practical. If there are dietary restrictions, strictly avoid those ingredients.`
           },
           {
             role: "user",

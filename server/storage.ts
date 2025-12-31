@@ -3,7 +3,8 @@ import {
   type InventoryItem, type InsertInventoryItem, inventoryItems,
   type ShoppingListItem, type InsertShoppingListItem, shoppingListItems,
   type Conversation, type InsertConversation, conversations,
-  type Message, type InsertMessage, messages
+  type Message, type InsertMessage, messages,
+  type UserProfile, type InsertUserProfile, userProfiles
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, lt } from "drizzle-orm";
@@ -30,6 +31,9 @@ export interface IStorage {
   deleteConversation(id: number): Promise<void>;
   getMessagesByConversation(conversationId: number): Promise<Message[]>;
   createMessage(conversationId: number, role: string, content: string): Promise<Message>;
+  
+  getUserProfile(): Promise<UserProfile | undefined>;
+  upsertUserProfile(profile: InsertUserProfile): Promise<UserProfile>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -114,6 +118,25 @@ export class DatabaseStorage implements IStorage {
   async createMessage(conversationId: number, role: string, content: string): Promise<Message> {
     const [message] = await db.insert(messages).values({ conversationId, role, content }).returning();
     return message;
+  }
+
+  async getUserProfile(): Promise<UserProfile | undefined> {
+    const [profile] = await db.select().from(userProfiles).limit(1);
+    return profile;
+  }
+
+  async upsertUserProfile(profile: InsertUserProfile): Promise<UserProfile> {
+    const existing = await this.getUserProfile();
+    if (existing) {
+      const [updated] = await db.update(userProfiles)
+        .set({ ...profile, updatedAt: new Date() })
+        .where(eq(userProfiles.id, existing.id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db.insert(userProfiles).values(profile).returning();
+      return created;
+    }
   }
 }
 

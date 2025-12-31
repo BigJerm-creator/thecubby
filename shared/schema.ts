@@ -86,3 +86,35 @@ export type Conversation = typeof conversations.$inferSelect;
 export type InsertConversation = z.infer<typeof insertConversationSchema>;
 export type Message = typeof messages.$inferSelect;
 export type InsertMessage = z.infer<typeof insertMessageSchema>;
+
+export const userProfiles = pgTable("user_profiles", {
+  id: serial("id").primaryKey(),
+  name: text("name"),
+  dateOfBirth: text("date_of_birth"),
+  height: doublePrecision("height"),
+  heightUnit: text("height_unit").default("in"),
+  weight: doublePrecision("weight"),
+  weightUnit: text("weight_unit").default("lbs"),
+  dietaryPreferences: text("dietary_preferences").array(),
+  restrictions: text("restrictions").array(),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const insertUserProfileSchema = createInsertSchema(userProfiles, {
+  name: z.string().nullable().optional(),
+  dateOfBirth: z.string().nullable().optional(),
+  height: z.number().nullable().optional(),
+  heightUnit: z.string().nullable().optional(),
+  weight: z.number().nullable().optional(),
+  weightUnit: z.string().nullable().optional(),
+  dietaryPreferences: z.array(z.string()).nullable().optional(),
+  restrictions: z.array(z.string()).nullable().optional(),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertUserProfile = z.infer<typeof insertUserProfileSchema>;
+export type UserProfile = typeof userProfiles.$inferSelect;
