@@ -1,10 +1,16 @@
 import { useState } from "react";
 import Layout from "@/components/layout";
-import { ArrowLeft, Sun, Moon, Check, Save, Sparkles } from "lucide-react";
+import { ArrowLeft, Sun, Moon, Check, Save, Sparkles, X } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { useTheme, type ThemeMode, type IconStyle, type ColorTheme, type Background } from "@/lib/ThemeContext";
+import christmasWallpaper from '@assets/generated_images/christmas_themed_wallpaper.png';
+import halloweenWallpaper from '@assets/generated_images/halloween_themed_wallpaper.png';
+import thanksgivingWallpaper from '@assets/generated_images/thanksgiving_themed_wallpaper.png';
+import easterWallpaper from '@assets/generated_images/easter_themed_wallpaper.png';
+import valentinesWallpaper from '@assets/generated_images/valentine_themed_wallpaper.png';
+import summerWallpaper from '@assets/generated_images/summer_themed_wallpaper.png';
 
 const ICON_STYLES: { id: IconStyle; label: string; preview: string }[] = [
   { id: "default", label: "Default", preview: "○" },
@@ -22,14 +28,14 @@ const COLOR_THEMES: { id: ColorTheme; label: string; colors: string[] }[] = [
   { id: "midnight", label: "Midnight", colors: ["#4A5899", "#9AA8D4"] },
 ];
 
-const BACKGROUNDS: { id: Background; label: string; emoji: string }[] = [
-  { id: "none", label: "None", emoji: "⊘" },
-  { id: "christmas", label: "Christmas", emoji: "🎄" },
-  { id: "halloween", label: "Halloween", emoji: "🎃" },
-  { id: "thanksgiving", label: "Thanksgiving", emoji: "🦃" },
-  { id: "easter", label: "Easter", emoji: "🐣" },
-  { id: "valentines", label: "Valentine's", emoji: "💕" },
-  { id: "summer", label: "Summer", emoji: "☀️" },
+const BACKGROUNDS: { id: Background; label: string; image: string | null }[] = [
+  { id: "none", label: "None", image: null },
+  { id: "christmas", label: "Christmas", image: christmasWallpaper },
+  { id: "halloween", label: "Halloween", image: halloweenWallpaper },
+  { id: "thanksgiving", label: "Thanksgiving", image: thanksgivingWallpaper },
+  { id: "easter", label: "Easter", image: easterWallpaper },
+  { id: "valentines", label: "Valentine's", image: valentinesWallpaper },
+  { id: "summer", label: "Summer", image: summerWallpaper },
 ];
 
 export default function Appearance() {
@@ -195,23 +201,37 @@ export default function Appearance() {
         <section className="space-y-4">
           <div className="flex items-center gap-2 ml-1">
             <Sparkles size={14} className="text-muted-foreground" />
-            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Holiday Backgrounds</h3>
+            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Custom Wallpapers</h3>
           </div>
           <div className="bg-card border border-border rounded-2xl p-4">
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-3 gap-3">
               {BACKGROUNDS.map((bg) => (
                 <button
                   key={bg.id}
                   onClick={() => setBackground(bg.id)}
-                  className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                  className={`relative flex flex-col items-center gap-2 rounded-xl border-2 transition-all overflow-hidden ${
                     background === bg.id
-                      ? "border-primary bg-primary/10"
+                      ? "border-primary ring-2 ring-primary/30"
                       : "border-border hover:border-primary/50"
                   }`}
                   data-testid={`button-bg-${bg.id}`}
                 >
-                  <span className="text-2xl">{bg.emoji}</span>
-                  <span className="text-xs font-medium">{bg.label}</span>
+                  {bg.image ? (
+                    <div 
+                      className="w-full h-20 bg-cover bg-center"
+                      style={{ backgroundImage: `url(${bg.image})` }}
+                    />
+                  ) : (
+                    <div className="w-full h-20 bg-muted flex items-center justify-center">
+                      <X className="text-muted-foreground" size={24} />
+                    </div>
+                  )}
+                  <span className="text-xs font-medium pb-2">{bg.label}</span>
+                  {background === bg.id && (
+                    <div className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full p-0.5">
+                      <Check size={12} />
+                    </div>
+                  )}
                 </button>
               ))}
             </div>

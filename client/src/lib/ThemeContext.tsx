@@ -1,4 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import christmasWallpaper from '@assets/generated_images/christmas_themed_wallpaper.png';
+import halloweenWallpaper from '@assets/generated_images/halloween_themed_wallpaper.png';
+import thanksgivingWallpaper from '@assets/generated_images/thanksgiving_themed_wallpaper.png';
+import easterWallpaper from '@assets/generated_images/easter_themed_wallpaper.png';
+import valentinesWallpaper from '@assets/generated_images/valentine_themed_wallpaper.png';
+import summerWallpaper from '@assets/generated_images/summer_themed_wallpaper.png';
 
 export type ThemeMode = 'light' | 'dark';
 export type IconStyle = 'default' | 'rounded' | 'sharp' | 'playful';
@@ -34,12 +40,12 @@ const COLOR_THEMES: Record<ColorTheme, { primary: string; accent: string }> = {
 
 const BACKGROUNDS: Record<Background, string> = {
   none: '',
-  christmas: 'linear-gradient(135deg, rgba(220,20,20,0.15) 0%, rgba(34,139,34,0.12) 50%, rgba(220,20,20,0.15) 100%)',
-  halloween: 'linear-gradient(135deg, rgba(255,140,0,0.18) 0%, rgba(128,0,128,0.12) 50%, rgba(0,0,0,0.08) 100%)',
-  thanksgiving: 'linear-gradient(135deg, rgba(210,105,30,0.15) 0%, rgba(184,134,11,0.12) 50%, rgba(139,69,19,0.10) 100%)',
-  easter: 'linear-gradient(135deg, rgba(255,182,193,0.2) 0%, rgba(173,216,230,0.18) 50%, rgba(221,160,221,0.15) 100%)',
-  valentines: 'linear-gradient(135deg, rgba(255,105,180,0.2) 0%, rgba(255,20,147,0.15) 50%, rgba(255,182,193,0.18) 100%)',
-  summer: 'linear-gradient(135deg, rgba(255,215,0,0.15) 0%, rgba(0,191,255,0.12) 50%, rgba(255,165,0,0.10) 100%)',
+  christmas: christmasWallpaper,
+  halloween: halloweenWallpaper,
+  thanksgiving: thanksgivingWallpaper,
+  easter: easterWallpaper,
+  valentines: valentinesWallpaper,
+  summer: summerWallpaper,
 };
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
@@ -78,7 +84,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--accent', colors.accent);
     
     const bg = BACKGROUNDS[background];
-    root.style.setProperty('--holiday-background', bg || 'none');
+    root.style.setProperty('--holiday-background', bg ? `url(${bg})` : 'none');
     
     root.setAttribute('data-icon-style', iconStyle);
   }, [themeMode, colorTheme, background, iconStyle]);

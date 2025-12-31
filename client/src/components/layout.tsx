@@ -17,7 +17,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col w-full md:max-w-md md:mx-auto bg-background md:shadow-2xl relative overflow-hidden md:my-4 md:rounded-[3rem] md:border-4 md:border-stone-900/5">
       <div 
-        className="absolute inset-0 pointer-events-none z-0 transition-all duration-300"
+        className="absolute inset-0 pointer-events-none z-0 transition-all duration-300 bg-cover bg-center bg-no-repeat opacity-40"
         style={{ backgroundImage: 'var(--holiday-background, none)' }}
       />
       {/* Top Status Bar Decoration (Simulated - only visible on desktop/preview) */}
