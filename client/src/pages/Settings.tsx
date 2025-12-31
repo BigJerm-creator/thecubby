@@ -29,18 +29,22 @@ export default function Settings() {
           <h1 className="text-3xl font-serif text-foreground">Settings</h1>
         </header>
 
-        <div className="bg-card border border-border rounded-2xl overflow-hidden divide-y divide-border/50">
+        <button 
+          onClick={() => setLocation("/profile")}
+          className="w-full bg-card border border-border rounded-2xl overflow-hidden"
+          data-testid="button-profile"
+        >
           <div className="p-4 flex items-center gap-4">
             <div className="h-12 w-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-serif text-xl">
-              JD
+              <User size={24} />
             </div>
-            <div className="flex-1">
-              <h3 className="font-medium text-foreground">Jane Doe</h3>
-              <p className="text-xs text-muted-foreground">Premium Plan</p>
+            <div className="flex-1 text-left">
+              <h3 className="font-medium text-foreground">My Profile</h3>
+              <p className="text-xs text-muted-foreground">Personal info & dietary preferences</p>
             </div>
-            <button className="text-sm text-primary font-medium">Edit</button>
+            <ChevronRight size={16} className="text-muted-foreground" />
           </div>
-        </div>
+        </button>
 
         <div className="space-y-4">
           <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1">Preferences</h3>
