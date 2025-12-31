@@ -128,14 +128,17 @@ export default function Scan() {
       
       const codeReader = new BrowserMultiFormatReader(hints);
       
-      codeReader.decodeFromStream(stream, video, (result) => {
+      codeReader.decodeFromStream(stream, video, (result, error) => {
         if (result && !detectedRef.current) {
+          console.log("ZXing detected:", result.getText());
           handleBarcodeDetected(result.getText());
         }
       });
       
+      console.log("ZXing scanner initialized");
       return true;
-    } catch {
+    } catch (e) {
+      console.error("ZXing init failed:", e);
       return false;
     }
   }, [handleBarcodeDetected]);
@@ -156,23 +159,63 @@ export default function Scan() {
     detectedRef.current = false;
     scanningRef.current = true;
     
-    if (!videoRef.current) return;
+    if (!videoRef.current) {
+      console.log("Video ref not ready, retrying...");
+      setTimeout(() => startCamera(), 100);
+      return;
+    }
+    
+    const tryGetCamera = async (constraints: MediaStreamConstraints): Promise<MediaStream | null> => {
+      try {
+        return await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (e) {
+        console.log("Camera constraint failed:", e);
+        return null;
+      }
+    };
     
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
+      let stream = await tryGetCamera({
         video: { 
-          facingMode: { ideal: "environment" },
+          facingMode: { exact: "environment" },
           width: { ideal: 1280 },
           height: { ideal: 720 }
         },
         audio: false
       });
       
+      if (!stream) {
+        stream = await tryGetCamera({
+          video: { facingMode: "environment" },
+          audio: false
+        });
+      }
+      
+      if (!stream) {
+        stream = await tryGetCamera({
+          video: true,
+          audio: false
+        });
+      }
+      
+      if (!stream) {
+        throw new Error("All camera attempts failed");
+      }
+      
       streamRef.current = stream;
       videoRef.current.srcObject = stream;
+      
+      await new Promise<void>((resolve) => {
+        if (videoRef.current) {
+          videoRef.current.onloadedmetadata = () => resolve();
+        }
+      });
+      
       await videoRef.current.play();
       
+      console.log("Camera started, trying barcode detection...");
       const useNative = await startNativeBarcodeScanner(videoRef.current);
+      console.log("Native barcode detector:", useNative ? "active" : "falling back to ZXing");
       if (!useNative) {
         await startZxingScanner(videoRef.current, stream);
       }
