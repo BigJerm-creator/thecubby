@@ -1,22 +1,18 @@
 import Layout from "@/components/layout";
 import { ScanLine, Barcode, Camera, Keyboard, X, Check } from "lucide-react";
-import { useState, useRef, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useRef, useEffect } from "react";
+import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
-import { 
-  BrowserMultiFormatReader, 
-  DecodeHintType, 
-  BarcodeFormat 
-} from '@zxing/library';
+import { BrowserMultiFormatReader } from '@zxing/browser';
+import { DecodeHintType, BarcodeFormat } from '@zxing/library';
 import { useLocation } from "wouter";
 
 export default function Scan() {
   const [isScanning, setIsScanning] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
-  const [stream, setStream] = useState<MediaStream | null>(null);
   const [scannedCode, setScannedCode] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const codeReaderRef = useRef<BrowserMultiFormatReader | null>(null);
+  const controlsRef = useRef<{ stop: () => void } | null>(null);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
@@ -27,139 +23,96 @@ export default function Scan() {
     return false;
   };
 
-  useEffect(() => {
-    const hints = new Map();
-    hints.set(DecodeHintType.POSSIBLE_FORMATS, [
-      BarcodeFormat.EAN_13,
-      BarcodeFormat.EAN_8,
-      BarcodeFormat.UPC_A,
-      BarcodeFormat.UPC_E,
-      BarcodeFormat.CODE_128,
-    ]);
-    hints.set(DecodeHintType.TRY_HARDER, true);
+  const handleBarcodeDetected = async (text: string) => {
+    if (!isValidBarcode(text)) {
+      console.log("Invalid barcode ignored:", text);
+      return;
+    }
     
-    codeReaderRef.current = new BrowserMultiFormatReader(hints);
+    setScannedCode(text);
+    stopCamera();
+    toast({
+      title: "Item Scanned!",
+      description: `Barcode: ${text}`,
+      action: <Check className="h-4 w-4 text-green-500" />
+    });
+    
+    try {
+      const res = await fetch(`/api/upc/${encodeURIComponent(text)}`);
+      const data = await res.json();
+      const params = new URLSearchParams();
+      params.set('barcode', text);
+      
+      if (data.found) {
+        if (data.name) params.set('name', data.name);
+        if (data.brand) params.set('brand', data.brand);
+        if (data.category) params.set('category', data.category);
+        if (data.imageUrl) params.set('imageUrl', data.imageUrl);
+        if (data.quantity) params.set('quantity', data.quantity);
+        if (data.ingredients) params.set('ingredients', data.ingredients);
+        if (data.allergens?.length) params.set('allergens', data.allergens.join(','));
+        if (data.nutrition) params.set('nutrition', JSON.stringify(data.nutrition));
+        if (data.servingSize) params.set('servingSize', data.servingSize);
+        if (data.nutriscore) params.set('nutriscore', data.nutriscore);
+        toast({
+          title: "Product Found!",
+          description: data.name || "Product data retrieved",
+        });
+      } else {
+        toast({
+          title: "Product not found",
+          description: "Enter details manually",
+        });
+      }
+      setLocation(`/manual-entry?${params.toString()}`);
+    } catch {
+      setLocation(`/manual-entry?barcode=${encodeURIComponent(text)}`);
+    }
+  };
+
+  useEffect(() => {
     startCamera();
     return () => stopCamera();
-  }, []);
-
-  // Effect to start decoding when stream is available
-  useEffect(() => {
-    if (videoRef.current && stream && codeReaderRef.current) {
-      // Let decodeFromStream handle video setup and playback
-      codeReaderRef.current.decodeFromStream(
-        stream, 
-        videoRef.current, 
-        (result, err) => {
-          if (result) {
-            const text = result.getText();
-            
-            // Validate the barcode before processing
-            if (!isValidBarcode(text)) {
-              console.log("Invalid barcode ignored:", text);
-              return;
-            }
-            
-            setScannedCode(text);
-            stopCamera();
-            toast({
-              title: "Item Scanned!",
-              description: `Looking up product...`,
-              action: <Check className="h-4 w-4 text-green-500" />
-            });
-            
-            fetch(`/api/upc/${encodeURIComponent(text)}`)
-              .then(res => res.json())
-              .then(data => {
-                const params = new URLSearchParams();
-                params.set('barcode', text);
-                if (data.found) {
-                  if (data.name) params.set('name', data.name);
-                  if (data.brand) params.set('brand', data.brand);
-                  if (data.category) params.set('category', data.category);
-                  if (data.imageUrl) params.set('imageUrl', data.imageUrl);
-                  if (data.quantity) params.set('quantity', data.quantity);
-                  if (data.ingredients) params.set('ingredients', data.ingredients);
-                  if (data.allergens?.length) params.set('allergens', data.allergens.join(','));
-                  if (data.nutrition) params.set('nutrition', JSON.stringify(data.nutrition));
-                  if (data.servingSize) params.set('servingSize', data.servingSize);
-                  if (data.nutriscore) params.set('nutriscore', data.nutriscore);
-                  toast({
-                    title: "Product Found!",
-                    description: data.name || "Product data retrieved",
-                  });
-                } else {
-                  toast({
-                    title: "Product not found",
-                    description: "Enter details manually",
-                  });
-                }
-                setLocation(`/manual-entry?${params.toString()}`);
-              })
-              .catch(() => {
-                setLocation(`/manual-entry?barcode=${encodeURIComponent(text)}`);
-              });
-          }
-        }
-      );
-    }
-  }, [stream]); 
+  }, []); 
 
   const startCamera = async () => {
     setCameraError(null);
     setIsScanning(true);
     setScannedCode(null);
     
+    if (!videoRef.current) return;
+    
     try {
-      // Clean up existing stream if any
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-
-      const tryConstraints = async (constraints: MediaStreamConstraints): Promise<MediaStream | null> => {
-        try {
-          return await navigator.mediaDevices.getUserMedia(constraints);
-        } catch {
-          return null;
-        }
-      };
-
-      let newStream = await tryConstraints({
-        video: { 
-          facingMode: { exact: "environment" },
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
+      const hints = new Map();
+      hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+        BarcodeFormat.EAN_13,
+        BarcodeFormat.EAN_8,
+        BarcodeFormat.UPC_A,
+        BarcodeFormat.UPC_E,
+        BarcodeFormat.CODE_128,
+      ]);
+      hints.set(DecodeHintType.TRY_HARDER, true);
+      
+      const codeReader = new BrowserMultiFormatReader(hints);
+      
+      const controls = await codeReader.decodeFromConstraints(
+        {
+          video: { facingMode: "environment" }
         },
-        audio: false 
-      });
-
-      if (!newStream) {
-        newStream = await tryConstraints({
-          video: { facingMode: "environment" },
-          audio: false 
-        });
-      }
-
-      if (!newStream) {
-        newStream = await tryConstraints({
-          video: true,
-          audio: false 
-        });
-      }
-
-      if (newStream) {
-        setStream(newStream);
-        return;
-      }
-
-      throw new Error("All camera access attempts failed");
+        videoRef.current,
+        (result, error) => {
+          if (result) {
+            handleBarcodeDetected(result.getText());
+          }
+        }
+      );
+      
+      controlsRef.current = controls;
       
     } catch (err) {
       console.error("Camera error:", err);
-
       setCameraError("Unable to access camera. Please check permissions.");
       setIsScanning(false);
-      setStream(null);
       
       toast({
         title: "Camera Error",
@@ -170,13 +123,10 @@ export default function Scan() {
   };
 
   const stopCamera = () => {
-    if (codeReaderRef.current) {
-        codeReaderRef.current.reset();
+    if (controlsRef.current) {
+      controlsRef.current.stop();
+      controlsRef.current = null;
     }
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-    }
-    setStream(null);
     setIsScanning(false);
   };
 
