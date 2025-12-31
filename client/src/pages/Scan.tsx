@@ -20,6 +20,13 @@ export default function Scan() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
+  const isValidBarcode = (code: string): boolean => {
+    if (!code || code.length < 6) return false;
+    if (/^\d{8,14}$/.test(code)) return true;
+    if (/^[A-Z0-9]{6,}$/.test(code) && code.length >= 8) return true;
+    return false;
+  };
+
   useEffect(() => {
     const hints = new Map();
     hints.set(DecodeHintType.POSSIBLE_FORMATS, [
@@ -28,14 +35,6 @@ export default function Scan() {
       BarcodeFormat.UPC_A,
       BarcodeFormat.UPC_E,
       BarcodeFormat.CODE_128,
-      BarcodeFormat.CODE_39,
-      BarcodeFormat.CODE_93,
-      BarcodeFormat.ITF,
-      BarcodeFormat.CODABAR,
-      BarcodeFormat.QR_CODE,
-      BarcodeFormat.DATA_MATRIX,
-      BarcodeFormat.PDF_417,
-      BarcodeFormat.AZTEC,
     ]);
     hints.set(DecodeHintType.TRY_HARDER, true);
     
@@ -54,6 +53,13 @@ export default function Scan() {
         (result, err) => {
           if (result) {
             const text = result.getText();
+            
+            // Validate the barcode before processing
+            if (!isValidBarcode(text)) {
+              console.log("Invalid barcode ignored:", text);
+              return;
+            }
+            
             setScannedCode(text);
             stopCamera();
             toast({
