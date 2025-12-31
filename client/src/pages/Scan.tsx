@@ -1,34 +1,45 @@
 import Layout from "@/components/layout";
 import { ScanLine, Barcode, Camera, Keyboard, X, Check } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
 import { BrowserMultiFormatReader } from '@zxing/browser';
 import { DecodeHintType, BarcodeFormat } from '@zxing/library';
 import { useLocation } from "wouter";
 
+declare global {
+  interface Window {
+    BarcodeDetector?: new (options?: { formats: string[] }) => {
+      detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue: string; format: string }>>;
+    };
+  }
+}
+
 export default function Scan() {
   const [isScanning, setIsScanning] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [scannedCode, setScannedCode] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const controlsRef = useRef<{ stop: () => void } | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const scanningRef = useRef<boolean>(false);
+  const detectedRef = useRef<boolean>(false);
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
   const isValidBarcode = (code: string): boolean => {
     if (!code || code.length < 6) return false;
     if (/^\d{8,14}$/.test(code)) return true;
-    if (/^[A-Z0-9]{6,}$/.test(code) && code.length >= 8) return true;
     return false;
   };
 
-  const handleBarcodeDetected = async (text: string) => {
+  const handleBarcodeDetected = useCallback(async (text: string) => {
+    if (detectedRef.current) return;
     if (!isValidBarcode(text)) {
       console.log("Invalid barcode ignored:", text);
       return;
     }
     
+    detectedRef.current = true;
     setScannedCode(text);
     stopCamera();
     toast({
@@ -68,20 +79,42 @@ export default function Scan() {
     } catch {
       setLocation(`/manual-entry?barcode=${encodeURIComponent(text)}`);
     }
-  };
+  }, [toast, setLocation]);
 
-  useEffect(() => {
-    startCamera();
-    return () => stopCamera();
-  }, []); 
+  const startNativeBarcodeScanner = useCallback(async (video: HTMLVideoElement) => {
+    if (!window.BarcodeDetector) return false;
+    
+    try {
+      const detector = new window.BarcodeDetector({
+        formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e', 'code_128']
+      });
+      
+      const scanFrame = async () => {
+        if (!scanningRef.current || detectedRef.current) return;
+        
+        try {
+          const barcodes = await detector.detect(video);
+          if (barcodes.length > 0) {
+            handleBarcodeDetected(barcodes[0].rawValue);
+            return;
+          }
+        } catch (e) {
+          console.log("Detection frame error:", e);
+        }
+        
+        if (scanningRef.current && !detectedRef.current) {
+          requestAnimationFrame(scanFrame);
+        }
+      };
+      
+      scanFrame();
+      return true;
+    } catch {
+      return false;
+    }
+  }, [handleBarcodeDetected]);
 
-  const startCamera = async () => {
-    setCameraError(null);
-    setIsScanning(true);
-    setScannedCode(null);
-    
-    if (!videoRef.current) return;
-    
+  const startZxingScanner = useCallback(async (video: HTMLVideoElement, stream: MediaStream) => {
     try {
       const hints = new Map();
       hints.set(DecodeHintType.POSSIBLE_FORMATS, [
@@ -95,24 +128,60 @@ export default function Scan() {
       
       const codeReader = new BrowserMultiFormatReader(hints);
       
-      const controls = await codeReader.decodeFromConstraints(
-        {
-          video: { facingMode: "environment" }
-        },
-        videoRef.current,
-        (result, error) => {
-          if (result) {
-            handleBarcodeDetected(result.getText());
-          }
+      codeReader.decodeFromStream(stream, video, (result) => {
+        if (result && !detectedRef.current) {
+          handleBarcodeDetected(result.getText());
         }
-      );
+      });
       
-      controlsRef.current = controls;
+      return true;
+    } catch {
+      return false;
+    }
+  }, [handleBarcodeDetected]);
+
+  const stopCamera = useCallback(() => {
+    scanningRef.current = false;
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setIsScanning(false);
+  }, []);
+
+  const startCamera = useCallback(async () => {
+    setCameraError(null);
+    setIsScanning(true);
+    setScannedCode(null);
+    detectedRef.current = false;
+    scanningRef.current = true;
+    
+    if (!videoRef.current) return;
+    
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { 
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        },
+        audio: false
+      });
+      
+      streamRef.current = stream;
+      videoRef.current.srcObject = stream;
+      await videoRef.current.play();
+      
+      const useNative = await startNativeBarcodeScanner(videoRef.current);
+      if (!useNative) {
+        await startZxingScanner(videoRef.current, stream);
+      }
       
     } catch (err) {
       console.error("Camera error:", err);
       setCameraError("Unable to access camera. Please check permissions.");
       setIsScanning(false);
+      scanningRef.current = false;
       
       toast({
         title: "Camera Error",
@@ -120,15 +189,12 @@ export default function Scan() {
         variant: "destructive"
       });
     }
-  };
+  }, [toast, startNativeBarcodeScanner, startZxingScanner]);
 
-  const stopCamera = () => {
-    if (controlsRef.current) {
-      controlsRef.current.stop();
-      controlsRef.current = null;
-    }
-    setIsScanning(false);
-  };
+  useEffect(() => {
+    startCamera();
+    return () => stopCamera();
+  }, []);
 
   const handleRetry = () => {
     startCamera();
