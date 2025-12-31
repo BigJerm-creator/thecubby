@@ -44,72 +44,60 @@ export default function Scan() {
     return () => stopCamera();
   }, []);
 
-  // Effect to attach stream to video element once it's rendered and stream is available
+  // Effect to start decoding when stream is available
   useEffect(() => {
-    if (videoRef.current && stream) {
-      videoRef.current.srcObject = stream;
-      // iOS requires user interaction for audio, but video is muted so it should autoplay if playsInline is set.
-      // However, explicit play() call is safer.
-      const playPromise = videoRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(e => {
-            console.error("Play error:", e);
-        });
-      }
-
-      // Start decoding from video stream
-      if (codeReaderRef.current && videoRef.current) {
-        codeReaderRef.current.decodeFromVideoDevice(
-          null, 
-          videoRef.current, 
-          (result, err) => {
-            if (result) {
-              const text = result.getText();
-              setScannedCode(text);
-              stopCamera();
-              toast({
-                title: "Item Scanned!",
-                description: `Looking up product...`,
-                action: <Check className="h-4 w-4 text-green-500" />
+    if (videoRef.current && stream && codeReaderRef.current) {
+      // Let decodeFromStream handle video setup and playback
+      codeReaderRef.current.decodeFromStream(
+        stream, 
+        videoRef.current, 
+        (result, err) => {
+          if (result) {
+            const text = result.getText();
+            setScannedCode(text);
+            stopCamera();
+            toast({
+              title: "Item Scanned!",
+              description: `Looking up product...`,
+              action: <Check className="h-4 w-4 text-green-500" />
+            });
+            
+            fetch(`/api/upc/${encodeURIComponent(text)}`)
+              .then(res => res.json())
+              .then(data => {
+                const params = new URLSearchParams();
+                params.set('barcode', text);
+                if (data.found) {
+                  if (data.name) params.set('name', data.name);
+                  if (data.brand) params.set('brand', data.brand);
+                  if (data.category) params.set('category', data.category);
+                  if (data.imageUrl) params.set('imageUrl', data.imageUrl);
+                  if (data.quantity) params.set('quantity', data.quantity);
+                  if (data.ingredients) params.set('ingredients', data.ingredients);
+                  if (data.allergens?.length) params.set('allergens', data.allergens.join(','));
+                  if (data.nutrition) params.set('nutrition', JSON.stringify(data.nutrition));
+                  if (data.servingSize) params.set('servingSize', data.servingSize);
+                  if (data.nutriscore) params.set('nutriscore', data.nutriscore);
+                  toast({
+                    title: "Product Found!",
+                    description: data.name || "Product data retrieved",
+                  });
+                } else {
+                  toast({
+                    title: "Product not found",
+                    description: "Enter details manually",
+                  });
+                }
+                setLocation(`/manual-entry?${params.toString()}`);
+              })
+              .catch(() => {
+                setLocation(`/manual-entry?barcode=${encodeURIComponent(text)}`);
               });
-              
-              fetch(`/api/upc/${encodeURIComponent(text)}`)
-                .then(res => res.json())
-                .then(data => {
-                  const params = new URLSearchParams();
-                  params.set('barcode', text);
-                  if (data.found) {
-                    if (data.name) params.set('name', data.name);
-                    if (data.brand) params.set('brand', data.brand);
-                    if (data.category) params.set('category', data.category);
-                    if (data.imageUrl) params.set('imageUrl', data.imageUrl);
-                    if (data.quantity) params.set('quantity', data.quantity);
-                    if (data.ingredients) params.set('ingredients', data.ingredients);
-                    if (data.allergens?.length) params.set('allergens', data.allergens.join(','));
-                    if (data.nutrition) params.set('nutrition', JSON.stringify(data.nutrition));
-                    if (data.servingSize) params.set('servingSize', data.servingSize);
-                    if (data.nutriscore) params.set('nutriscore', data.nutriscore);
-                    toast({
-                      title: "Product Found!",
-                      description: data.name || "Product data retrieved",
-                    });
-                  } else {
-                    toast({
-                      title: "Product not found",
-                      description: "Enter details manually",
-                    });
-                  }
-                  setLocation(`/manual-entry?${params.toString()}`);
-                })
-                .catch(() => {
-                  setLocation(`/manual-entry?barcode=${encodeURIComponent(text)}`);
-                });
-            }
           }
-        ).catch(err => console.error("Decode error:", err));
-      }
+        }
+      );
     }
-  }, [videoRef, stream]); 
+  }, [stream]); 
 
   const startCamera = async () => {
     setCameraError(null);
