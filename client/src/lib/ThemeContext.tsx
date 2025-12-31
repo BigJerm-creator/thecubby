@@ -1,15 +1,39 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import christmasWallpaper from '@assets/generated_images/christmas_themed_wallpaper.png';
-import halloweenWallpaper from '@assets/generated_images/halloween_themed_wallpaper.png';
-import thanksgivingWallpaper from '@assets/generated_images/thanksgiving_themed_wallpaper.png';
-import easterWallpaper from '@assets/generated_images/easter_themed_wallpaper.png';
-import valentinesWallpaper from '@assets/generated_images/valentine_themed_wallpaper.png';
-import summerWallpaper from '@assets/generated_images/summer_themed_wallpaper.png';
+import christmasWallpaper1 from '@assets/generated_images/christmas_themed_wallpaper.png';
+import christmasWallpaper2 from '@assets/generated_images/christmas_fireplace_wallpaper.png';
+import christmasWallpaper3 from '@assets/generated_images/christmas_gold_ornaments_wallpaper.png';
+import christmasWallpaper4 from '@assets/generated_images/nordic_christmas_wallpaper.png';
+import christmasWallpaper5 from '@assets/generated_images/christmas_night_sky_wallpaper.png';
+import halloweenWallpaper1 from '@assets/generated_images/halloween_themed_wallpaper.png';
+import halloweenWallpaper2 from '@assets/generated_images/halloween_haunted_house_wallpaper.png';
+import halloweenWallpaper3 from '@assets/generated_images/halloween_pumpkin_patch_wallpaper.png';
+import halloweenWallpaper4 from '@assets/generated_images/halloween_forest_wallpaper.png';
+import halloweenWallpaper5 from '@assets/generated_images/halloween_witch_cauldron_wallpaper.png';
+import thanksgivingWallpaper1 from '@assets/generated_images/thanksgiving_themed_wallpaper.png';
+import thanksgivingWallpaper2 from '@assets/generated_images/thanksgiving_harvest_wallpaper.png';
+import thanksgivingWallpaper3 from '@assets/generated_images/thanksgiving_autumn_path_wallpaper.png';
+import thanksgivingWallpaper4 from '@assets/generated_images/thanksgiving_pumpkins_wallpaper.png';
+import thanksgivingWallpaper5 from '@assets/generated_images/thanksgiving_cabin_wallpaper.png';
+import easterWallpaper1 from '@assets/generated_images/easter_themed_wallpaper.png';
+import easterWallpaper2 from '@assets/generated_images/easter_garden_wallpaper.png';
+import easterWallpaper3 from '@assets/generated_images/easter_basket_wallpaper.png';
+import easterWallpaper4 from '@assets/generated_images/easter_meadow_wallpaper.png';
+import easterWallpaper5 from '@assets/generated_images/easter_sunrise_wallpaper.png';
+import valentinesWallpaper1 from '@assets/generated_images/valentine_themed_wallpaper.png';
+import valentinesWallpaper2 from '@assets/generated_images/valentine_roses_wallpaper.png';
+import valentinesWallpaper3 from '@assets/generated_images/valentine_candy_hearts_wallpaper.png';
+import valentinesWallpaper4 from '@assets/generated_images/valentine_paris_wallpaper.png';
+import valentinesWallpaper5 from '@assets/generated_images/valentine_love_letters_wallpaper.png';
+import summerWallpaper1 from '@assets/generated_images/summer_themed_wallpaper.png';
+import summerWallpaper2 from '@assets/generated_images/summer_beach_sunset_wallpaper.png';
+import summerWallpaper3 from '@assets/generated_images/summer_tropical_paradise_wallpaper.png';
+import summerWallpaper4 from '@assets/generated_images/summer_poolside_wallpaper.png';
+import summerWallpaper5 from '@assets/generated_images/summer_ice_cream_wallpaper.png';
 
 export type ThemeMode = 'light' | 'dark';
 export type IconStyle = 'default' | 'rounded' | 'sharp' | 'playful';
 export type ColorTheme = 'farmhouse' | 'ocean' | 'sunset' | 'forest' | 'lavender' | 'midnight';
-export type Background = 'none' | 'christmas' | 'halloween' | 'thanksgiving' | 'easter' | 'valentines' | 'summer';
+export type Background = 'none' | 'christmas-1' | 'christmas-2' | 'christmas-3' | 'christmas-4' | 'christmas-5' | 'halloween-1' | 'halloween-2' | 'halloween-3' | 'halloween-4' | 'halloween-5' | 'thanksgiving-1' | 'thanksgiving-2' | 'thanksgiving-3' | 'thanksgiving-4' | 'thanksgiving-5' | 'easter-1' | 'easter-2' | 'easter-3' | 'easter-4' | 'easter-5' | 'valentines-1' | 'valentines-2' | 'valentines-3' | 'valentines-4' | 'valentines-5' | 'summer-1' | 'summer-2' | 'summer-3' | 'summer-4' | 'summer-5';
 
 interface ThemeSettings {
   themeMode: ThemeMode;
@@ -40,12 +64,36 @@ const COLOR_THEMES: Record<ColorTheme, { primary: string; accent: string }> = {
 
 const BACKGROUNDS: Record<Background, string> = {
   none: '',
-  christmas: christmasWallpaper,
-  halloween: halloweenWallpaper,
-  thanksgiving: thanksgivingWallpaper,
-  easter: easterWallpaper,
-  valentines: valentinesWallpaper,
-  summer: summerWallpaper,
+  'christmas-1': christmasWallpaper1,
+  'christmas-2': christmasWallpaper2,
+  'christmas-3': christmasWallpaper3,
+  'christmas-4': christmasWallpaper4,
+  'christmas-5': christmasWallpaper5,
+  'halloween-1': halloweenWallpaper1,
+  'halloween-2': halloweenWallpaper2,
+  'halloween-3': halloweenWallpaper3,
+  'halloween-4': halloweenWallpaper4,
+  'halloween-5': halloweenWallpaper5,
+  'thanksgiving-1': thanksgivingWallpaper1,
+  'thanksgiving-2': thanksgivingWallpaper2,
+  'thanksgiving-3': thanksgivingWallpaper3,
+  'thanksgiving-4': thanksgivingWallpaper4,
+  'thanksgiving-5': thanksgivingWallpaper5,
+  'easter-1': easterWallpaper1,
+  'easter-2': easterWallpaper2,
+  'easter-3': easterWallpaper3,
+  'easter-4': easterWallpaper4,
+  'easter-5': easterWallpaper5,
+  'valentines-1': valentinesWallpaper1,
+  'valentines-2': valentinesWallpaper2,
+  'valentines-3': valentinesWallpaper3,
+  'valentines-4': valentinesWallpaper4,
+  'valentines-5': valentinesWallpaper5,
+  'summer-1': summerWallpaper1,
+  'summer-2': summerWallpaper2,
+  'summer-3': summerWallpaper3,
+  'summer-4': summerWallpaper4,
+  'summer-5': summerWallpaper5,
 };
 
 export function ThemeProvider({ children }: { children: ReactNode }) {

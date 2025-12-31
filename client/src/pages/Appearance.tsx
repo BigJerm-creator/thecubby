@@ -5,12 +5,36 @@ import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { useTheme, type ThemeMode, type IconStyle, type ColorTheme, type Background } from "@/lib/ThemeContext";
-import christmasWallpaper from '@assets/generated_images/christmas_themed_wallpaper.png';
-import halloweenWallpaper from '@assets/generated_images/halloween_themed_wallpaper.png';
-import thanksgivingWallpaper from '@assets/generated_images/thanksgiving_themed_wallpaper.png';
-import easterWallpaper from '@assets/generated_images/easter_themed_wallpaper.png';
-import valentinesWallpaper from '@assets/generated_images/valentine_themed_wallpaper.png';
-import summerWallpaper from '@assets/generated_images/summer_themed_wallpaper.png';
+import christmasWallpaper1 from '@assets/generated_images/christmas_themed_wallpaper.png';
+import christmasWallpaper2 from '@assets/generated_images/christmas_fireplace_wallpaper.png';
+import christmasWallpaper3 from '@assets/generated_images/christmas_gold_ornaments_wallpaper.png';
+import christmasWallpaper4 from '@assets/generated_images/nordic_christmas_wallpaper.png';
+import christmasWallpaper5 from '@assets/generated_images/christmas_night_sky_wallpaper.png';
+import halloweenWallpaper1 from '@assets/generated_images/halloween_themed_wallpaper.png';
+import halloweenWallpaper2 from '@assets/generated_images/halloween_haunted_house_wallpaper.png';
+import halloweenWallpaper3 from '@assets/generated_images/halloween_pumpkin_patch_wallpaper.png';
+import halloweenWallpaper4 from '@assets/generated_images/halloween_forest_wallpaper.png';
+import halloweenWallpaper5 from '@assets/generated_images/halloween_witch_cauldron_wallpaper.png';
+import thanksgivingWallpaper1 from '@assets/generated_images/thanksgiving_themed_wallpaper.png';
+import thanksgivingWallpaper2 from '@assets/generated_images/thanksgiving_harvest_wallpaper.png';
+import thanksgivingWallpaper3 from '@assets/generated_images/thanksgiving_autumn_path_wallpaper.png';
+import thanksgivingWallpaper4 from '@assets/generated_images/thanksgiving_pumpkins_wallpaper.png';
+import thanksgivingWallpaper5 from '@assets/generated_images/thanksgiving_cabin_wallpaper.png';
+import easterWallpaper1 from '@assets/generated_images/easter_themed_wallpaper.png';
+import easterWallpaper2 from '@assets/generated_images/easter_garden_wallpaper.png';
+import easterWallpaper3 from '@assets/generated_images/easter_basket_wallpaper.png';
+import easterWallpaper4 from '@assets/generated_images/easter_meadow_wallpaper.png';
+import easterWallpaper5 from '@assets/generated_images/easter_sunrise_wallpaper.png';
+import valentinesWallpaper1 from '@assets/generated_images/valentine_themed_wallpaper.png';
+import valentinesWallpaper2 from '@assets/generated_images/valentine_roses_wallpaper.png';
+import valentinesWallpaper3 from '@assets/generated_images/valentine_candy_hearts_wallpaper.png';
+import valentinesWallpaper4 from '@assets/generated_images/valentine_paris_wallpaper.png';
+import valentinesWallpaper5 from '@assets/generated_images/valentine_love_letters_wallpaper.png';
+import summerWallpaper1 from '@assets/generated_images/summer_themed_wallpaper.png';
+import summerWallpaper2 from '@assets/generated_images/summer_beach_sunset_wallpaper.png';
+import summerWallpaper3 from '@assets/generated_images/summer_tropical_paradise_wallpaper.png';
+import summerWallpaper4 from '@assets/generated_images/summer_poolside_wallpaper.png';
+import summerWallpaper5 from '@assets/generated_images/summer_ice_cream_wallpaper.png';
 
 const ICON_STYLES: { id: IconStyle; label: string; preview: string }[] = [
   { id: "default", label: "Default", preview: "○" },
@@ -28,14 +52,73 @@ const COLOR_THEMES: { id: ColorTheme; label: string; colors: string[] }[] = [
   { id: "midnight", label: "Midnight", colors: ["#4A5899", "#9AA8D4"] },
 ];
 
-const BACKGROUNDS: { id: Background; label: string; image: string | null }[] = [
-  { id: "none", label: "None", image: null },
-  { id: "christmas", label: "Christmas", image: christmasWallpaper },
-  { id: "halloween", label: "Halloween", image: halloweenWallpaper },
-  { id: "thanksgiving", label: "Thanksgiving", image: thanksgivingWallpaper },
-  { id: "easter", label: "Easter", image: easterWallpaper },
-  { id: "valentines", label: "Valentine's", image: valentinesWallpaper },
-  { id: "summer", label: "Summer", image: summerWallpaper },
+const WALLPAPER_CATEGORIES = [
+  { 
+    category: "Christmas", 
+    emoji: "🎄",
+    wallpapers: [
+      { id: "christmas-1" as Background, image: christmasWallpaper1 },
+      { id: "christmas-2" as Background, image: christmasWallpaper2 },
+      { id: "christmas-3" as Background, image: christmasWallpaper3 },
+      { id: "christmas-4" as Background, image: christmasWallpaper4 },
+      { id: "christmas-5" as Background, image: christmasWallpaper5 },
+    ]
+  },
+  { 
+    category: "Halloween", 
+    emoji: "🎃",
+    wallpapers: [
+      { id: "halloween-1" as Background, image: halloweenWallpaper1 },
+      { id: "halloween-2" as Background, image: halloweenWallpaper2 },
+      { id: "halloween-3" as Background, image: halloweenWallpaper3 },
+      { id: "halloween-4" as Background, image: halloweenWallpaper4 },
+      { id: "halloween-5" as Background, image: halloweenWallpaper5 },
+    ]
+  },
+  { 
+    category: "Thanksgiving", 
+    emoji: "🦃",
+    wallpapers: [
+      { id: "thanksgiving-1" as Background, image: thanksgivingWallpaper1 },
+      { id: "thanksgiving-2" as Background, image: thanksgivingWallpaper2 },
+      { id: "thanksgiving-3" as Background, image: thanksgivingWallpaper3 },
+      { id: "thanksgiving-4" as Background, image: thanksgivingWallpaper4 },
+      { id: "thanksgiving-5" as Background, image: thanksgivingWallpaper5 },
+    ]
+  },
+  { 
+    category: "Easter", 
+    emoji: "🐣",
+    wallpapers: [
+      { id: "easter-1" as Background, image: easterWallpaper1 },
+      { id: "easter-2" as Background, image: easterWallpaper2 },
+      { id: "easter-3" as Background, image: easterWallpaper3 },
+      { id: "easter-4" as Background, image: easterWallpaper4 },
+      { id: "easter-5" as Background, image: easterWallpaper5 },
+    ]
+  },
+  { 
+    category: "Valentine's", 
+    emoji: "💕",
+    wallpapers: [
+      { id: "valentines-1" as Background, image: valentinesWallpaper1 },
+      { id: "valentines-2" as Background, image: valentinesWallpaper2 },
+      { id: "valentines-3" as Background, image: valentinesWallpaper3 },
+      { id: "valentines-4" as Background, image: valentinesWallpaper4 },
+      { id: "valentines-5" as Background, image: valentinesWallpaper5 },
+    ]
+  },
+  { 
+    category: "Summer", 
+    emoji: "☀️",
+    wallpapers: [
+      { id: "summer-1" as Background, image: summerWallpaper1 },
+      { id: "summer-2" as Background, image: summerWallpaper2 },
+      { id: "summer-3" as Background, image: summerWallpaper3 },
+      { id: "summer-4" as Background, image: summerWallpaper4 },
+      { id: "summer-5" as Background, image: summerWallpaper5 },
+    ]
+  },
 ];
 
 export default function Appearance() {
@@ -203,39 +286,57 @@ export default function Appearance() {
             <Sparkles size={14} className="text-muted-foreground" />
             <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Custom Wallpapers</h3>
           </div>
-          <div className="bg-card border border-border rounded-2xl p-4">
-            <div className="grid grid-cols-3 gap-3">
-              {BACKGROUNDS.map((bg) => (
-                <button
-                  key={bg.id}
-                  onClick={() => setBackground(bg.id)}
-                  className={`relative flex flex-col items-center gap-2 rounded-xl border-2 transition-all overflow-hidden ${
-                    background === bg.id
-                      ? "border-primary ring-2 ring-primary/30"
-                      : "border-border hover:border-primary/50"
-                  }`}
-                  data-testid={`button-bg-${bg.id}`}
-                >
-                  {bg.image ? (
-                    <div 
-                      className="w-full h-20 bg-cover bg-center"
-                      style={{ backgroundImage: `url(${bg.image})` }}
-                    />
-                  ) : (
-                    <div className="w-full h-20 bg-muted flex items-center justify-center">
-                      <X className="text-muted-foreground" size={24} />
-                    </div>
-                  )}
-                  <span className="text-xs font-medium pb-2">{bg.label}</span>
-                  {background === bg.id && (
-                    <div className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full p-0.5">
-                      <Check size={12} />
-                    </div>
-                  )}
-                </button>
-              ))}
+          
+          <button
+            onClick={() => setBackground("none")}
+            className={`w-full bg-card border rounded-2xl p-4 flex items-center gap-3 transition-all ${
+              background === "none"
+                ? "border-primary ring-2 ring-primary/30"
+                : "border-border hover:border-primary/50"
+            }`}
+            data-testid="button-bg-none"
+          >
+            <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
+              <X className="text-muted-foreground" size={20} />
             </div>
-          </div>
+            <span className="font-medium">No Wallpaper</span>
+            {background === "none" && (
+              <Check className="text-primary ml-auto" size={18} />
+            )}
+          </button>
+
+          {WALLPAPER_CATEGORIES.map((cat) => (
+            <div key={cat.category} className="bg-card border border-border rounded-2xl p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">{cat.emoji}</span>
+                <h4 className="font-medium text-sm">{cat.category}</h4>
+              </div>
+              <div className="grid grid-cols-5 gap-2">
+                {cat.wallpapers.map((wp) => (
+                  <button
+                    key={wp.id}
+                    onClick={() => setBackground(wp.id)}
+                    className={`relative aspect-[9/16] rounded-lg overflow-hidden border-2 transition-all ${
+                      background === wp.id
+                        ? "border-primary ring-2 ring-primary/30"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                    data-testid={`button-bg-${wp.id}`}
+                  >
+                    <div 
+                      className="absolute inset-0 bg-cover bg-center"
+                      style={{ backgroundImage: `url(${wp.image})` }}
+                    />
+                    {background === wp.id && (
+                      <div className="absolute top-1 right-1 bg-primary text-primary-foreground rounded-full p-0.5">
+                        <Check size={10} />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
         </section>
 
         <Button
