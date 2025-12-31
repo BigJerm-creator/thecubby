@@ -210,15 +210,16 @@ export default function Scan() {
 
         {/* Scanner Viewport Simulation */}
         <div className="relative aspect-[3/4] bg-black rounded-3xl overflow-hidden shadow-xl mb-6 mx-2">
+          {/* Video element always rendered for ref to work */}
+          <video 
+            ref={videoRef}
+            autoPlay
+            playsInline 
+            muted
+            className={`absolute inset-0 w-full h-full object-cover ${isScanning ? 'block' : 'hidden'}`}
+          />
           {isScanning ? (
             <>
-              {/* Actual Camera Feed */}
-              <video 
-                ref={videoRef}
-                playsInline 
-                muted
-                className="absolute inset-0 w-full h-full object-cover"
-              />
               
               {/* Overlay UI */}
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-8">
