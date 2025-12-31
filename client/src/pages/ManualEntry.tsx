@@ -1,11 +1,11 @@
 import Layout from "@/components/layout";
-import { ArrowLeft, Plus, Check } from "lucide-react";
+import { ArrowLeft, Plus, Check, Info, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { KITCHEN_CATEGORIES } from "@/lib/mockData";
 import { useToast } from "@/hooks/use-toast";
 import { useInventory } from "@/lib/InventoryContext";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 const UNIT_OPTIONS = [
   { value: "oz", label: "Ounces" },
@@ -22,11 +22,31 @@ const UNIT_OPTIONS = [
   { value: "pack", label: "Pack" },
 ];
 
+interface ProductInfo {
+  imageUrl?: string;
+  ingredients?: string;
+  allergens?: string[];
+  nutrition?: {
+    calories?: number;
+    protein?: number;
+    carbs?: number;
+    fat?: number;
+    fiber?: number;
+    sugar?: number;
+    sodium?: number;
+  };
+  servingSize?: string;
+  nutriscore?: string;
+  barcode?: string;
+}
+
 export default function ManualEntry() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const { addItem } = useInventory();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  const [productInfo, setProductInfo] = useState<ProductInfo>({});
   
   const [formData, setFormData] = useState({
     name: "",
@@ -43,6 +63,12 @@ export default function ManualEntry() {
     const brand = params.get("brand");
     const category = params.get("category");
     const barcode = params.get("barcode");
+    const imageUrl = params.get("imageUrl");
+    const ingredients = params.get("ingredients");
+    const allergens = params.get("allergens");
+    const nutrition = params.get("nutrition");
+    const servingSize = params.get("servingSize");
+    const nutriscore = params.get("nutriscore");
     
     setFormData(prev => ({
       ...prev,
@@ -50,6 +76,16 @@ export default function ManualEntry() {
       brand: brand || prev.brand,
       category: category || prev.category,
     }));
+    
+    setProductInfo({
+      imageUrl: imageUrl || undefined,
+      ingredients: ingredients || undefined,
+      allergens: allergens ? allergens.split(',') : undefined,
+      nutrition: nutrition ? JSON.parse(nutrition) : undefined,
+      servingSize: servingSize || undefined,
+      nutriscore: nutriscore || undefined,
+      barcode: barcode || undefined,
+    });
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -124,6 +160,126 @@ export default function ManualEntry() {
             <p className="text-muted-foreground text-sm">Enter product details manually</p>
           </div>
         </div>
+
+        {(productInfo.imageUrl || productInfo.ingredients || productInfo.nutrition) && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-card border border-border rounded-2xl overflow-hidden"
+          >
+            <div className="flex gap-4 p-4">
+              {productInfo.imageUrl && (
+                <img 
+                  src={productInfo.imageUrl} 
+                  alt="Product" 
+                  className="w-20 h-20 object-contain rounded-lg bg-white"
+                  data-testid="img-product"
+                />
+              )}
+              <div className="flex-1 min-w-0">
+                <h3 className="font-medium text-foreground truncate">{formData.name || 'Product'}</h3>
+                {formData.brand && <p className="text-sm text-muted-foreground">{formData.brand}</p>}
+                {productInfo.barcode && (
+                  <p className="text-xs text-muted-foreground font-mono mt-1">{productInfo.barcode}</p>
+                )}
+                {productInfo.nutriscore && (
+                  <span className={`inline-block mt-2 px-2 py-0.5 text-xs font-bold rounded uppercase ${
+                    productInfo.nutriscore === 'a' ? 'bg-green-100 text-green-700' :
+                    productInfo.nutriscore === 'b' ? 'bg-lime-100 text-lime-700' :
+                    productInfo.nutriscore === 'c' ? 'bg-yellow-100 text-yellow-700' :
+                    productInfo.nutriscore === 'd' ? 'bg-orange-100 text-orange-700' :
+                    'bg-red-100 text-red-700'
+                  }`}>
+                    Nutri-Score {productInfo.nutriscore.toUpperCase()}
+                  </span>
+                )}
+              </div>
+            </div>
+            
+            {(productInfo.ingredients || productInfo.nutrition || productInfo.allergens?.length) && (
+              <button
+                type="button"
+                onClick={() => setShowDetails(!showDetails)}
+                className="w-full px-4 py-2 flex items-center justify-between text-sm text-primary border-t border-border hover:bg-muted/50 transition-colors"
+                data-testid="button-toggle-details"
+              >
+                <span className="flex items-center gap-2">
+                  <Info size={16} />
+                  Product Details
+                </span>
+                {showDetails ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </button>
+            )}
+            
+            <AnimatePresence>
+              {showDetails && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="p-4 pt-0 space-y-4">
+                    {productInfo.allergens && productInfo.allergens.length > 0 && (
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                        <div className="flex items-center gap-2 text-amber-700 font-medium text-sm mb-1">
+                          <AlertTriangle size={14} />
+                          Allergens
+                        </div>
+                        <p className="text-sm text-amber-600 capitalize">
+                          {productInfo.allergens.join(', ')}
+                        </p>
+                      </div>
+                    )}
+                    
+                    {productInfo.nutrition && (
+                      <div>
+                        <h4 className="text-sm font-medium text-foreground mb-2">
+                          Nutrition {productInfo.servingSize && `(${productInfo.servingSize})`}
+                        </h4>
+                        <div className="grid grid-cols-4 gap-2 text-center">
+                          {productInfo.nutrition.calories !== undefined && (
+                            <div className="bg-muted rounded-lg p-2">
+                              <div className="text-lg font-bold text-foreground">{Math.round(productInfo.nutrition.calories)}</div>
+                              <div className="text-xs text-muted-foreground">cal</div>
+                            </div>
+                          )}
+                          {productInfo.nutrition.protein !== undefined && (
+                            <div className="bg-muted rounded-lg p-2">
+                              <div className="text-lg font-bold text-foreground">{Math.round(productInfo.nutrition.protein)}g</div>
+                              <div className="text-xs text-muted-foreground">protein</div>
+                            </div>
+                          )}
+                          {productInfo.nutrition.carbs !== undefined && (
+                            <div className="bg-muted rounded-lg p-2">
+                              <div className="text-lg font-bold text-foreground">{Math.round(productInfo.nutrition.carbs)}g</div>
+                              <div className="text-xs text-muted-foreground">carbs</div>
+                            </div>
+                          )}
+                          {productInfo.nutrition.fat !== undefined && (
+                            <div className="bg-muted rounded-lg p-2">
+                              <div className="text-lg font-bold text-foreground">{Math.round(productInfo.nutrition.fat)}g</div>
+                              <div className="text-xs text-muted-foreground">fat</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {productInfo.ingredients && (
+                      <div>
+                        <h4 className="text-sm font-medium text-foreground mb-1">Ingredients</h4>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          {productInfo.ingredients}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
 
         <motion.form
           onSubmit={handleSubmit}

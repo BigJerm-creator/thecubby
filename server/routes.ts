@@ -59,12 +59,32 @@ export async function registerRoutes(
       
       if (data.status === 1 && data.product) {
         const product = data.product;
+        
+        const nutriments = product.nutriments || {};
+        const nutritionData: Record<string, string | number | null> = {};
+        if (nutriments['energy-kcal_100g']) nutritionData.calories = nutriments['energy-kcal_100g'];
+        if (nutriments.proteins_100g) nutritionData.protein = nutriments.proteins_100g;
+        if (nutriments.carbohydrates_100g) nutritionData.carbs = nutriments.carbohydrates_100g;
+        if (nutriments.fat_100g) nutritionData.fat = nutriments.fat_100g;
+        if (nutriments.fiber_100g) nutritionData.fiber = nutriments.fiber_100g;
+        if (nutriments.sugars_100g) nutritionData.sugar = nutriments.sugars_100g;
+        if (nutriments.sodium_100g) nutritionData.sodium = nutriments.sodium_100g;
+        
         res.json({
           found: true,
           name: product.product_name || product.generic_name || null,
           brand: product.brands || null,
           category: guessCategory(product.categories_tags || []),
           quantity: product.quantity || null,
+          imageUrl: product.image_front_url || product.image_url || null,
+          ingredients: product.ingredients_text || null,
+          allergens: product.allergens_tags?.map((a: string) => a.replace('en:', '')) || [],
+          nutrition: Object.keys(nutritionData).length > 0 ? nutritionData : null,
+          servingSize: product.serving_size || null,
+          nutriscore: product.nutriscore_grade || null,
+          novaGroup: product.nova_group || null,
+          countries: product.countries || null,
+          source: 'openfoodfacts',
         });
       } else {
         const upcResponse = await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${barcode}`);
@@ -78,6 +98,11 @@ export async function registerRoutes(
             brand: item.brand || null,
             category: guessCategory(item.category ? [item.category] : []),
             quantity: null,
+            imageUrl: item.images?.[0] || null,
+            description: item.description || null,
+            ean: item.ean || null,
+            upc: item.upc || null,
+            source: 'upcitemdb',
           });
         } else {
           res.json({ found: false });

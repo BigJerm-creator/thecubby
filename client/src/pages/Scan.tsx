@@ -1,9 +1,13 @@
 import Layout from "@/components/layout";
 import { ScanLine, Barcode, Camera, Keyboard, X, Check } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
-import { BrowserMultiFormatReader, NotFoundException } from '@zxing/library';
+import { 
+  BrowserMultiFormatReader, 
+  DecodeHintType, 
+  BarcodeFormat 
+} from '@zxing/library';
 import { useLocation } from "wouter";
 
 export default function Scan() {
@@ -17,7 +21,25 @@ export default function Scan() {
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    codeReaderRef.current = new BrowserMultiFormatReader();
+    const hints = new Map();
+    hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+      BarcodeFormat.EAN_13,
+      BarcodeFormat.EAN_8,
+      BarcodeFormat.UPC_A,
+      BarcodeFormat.UPC_E,
+      BarcodeFormat.CODE_128,
+      BarcodeFormat.CODE_39,
+      BarcodeFormat.CODE_93,
+      BarcodeFormat.ITF,
+      BarcodeFormat.CODABAR,
+      BarcodeFormat.QR_CODE,
+      BarcodeFormat.DATA_MATRIX,
+      BarcodeFormat.PDF_417,
+      BarcodeFormat.AZTEC,
+    ]);
+    hints.set(DecodeHintType.TRY_HARDER, true);
+    
+    codeReaderRef.current = new BrowserMultiFormatReader(hints);
     startCamera();
     return () => stopCamera();
   }, []);
@@ -60,6 +82,13 @@ export default function Scan() {
                     if (data.name) params.set('name', data.name);
                     if (data.brand) params.set('brand', data.brand);
                     if (data.category) params.set('category', data.category);
+                    if (data.imageUrl) params.set('imageUrl', data.imageUrl);
+                    if (data.quantity) params.set('quantity', data.quantity);
+                    if (data.ingredients) params.set('ingredients', data.ingredients);
+                    if (data.allergens?.length) params.set('allergens', data.allergens.join(','));
+                    if (data.nutrition) params.set('nutrition', JSON.stringify(data.nutrition));
+                    if (data.servingSize) params.set('servingSize', data.servingSize);
+                    if (data.nutriscore) params.set('nutriscore', data.nutriscore);
                     toast({
                       title: "Product Found!",
                       description: data.name || "Product data retrieved",
@@ -93,9 +122,12 @@ export default function Scan() {
         stream.getTracks().forEach(track => track.stop());
       }
 
-      const constraints = {
+      const constraints: MediaStreamConstraints = {
         video: { 
-          facingMode: "environment"
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1920, min: 1280 },
+          height: { ideal: 1080, min: 720 },
+          aspectRatio: { ideal: 16/9 },
         },
         audio: false 
       };
