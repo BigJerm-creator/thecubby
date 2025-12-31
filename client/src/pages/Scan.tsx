@@ -111,7 +111,7 @@ export default function Scan() {
     }
   }, [videoRef, stream]); 
 
-  const startCamera = async (retry = true) => {
+  const startCamera = async () => {
     setCameraError(null);
     setIsScanning(true);
     setScannedCode(null);
@@ -122,33 +122,46 @@ export default function Scan() {
         stream.getTracks().forEach(track => track.stop());
       }
 
-      const constraints: MediaStreamConstraints = {
-        video: { 
-          facingMode: { ideal: "environment" },
-          width: { ideal: 1920, min: 1280 },
-          height: { ideal: 1080, min: 720 },
-          aspectRatio: { ideal: 16/9 },
-        },
-        audio: false 
+      const tryConstraints = async (constraints: MediaStreamConstraints): Promise<MediaStream | null> => {
+        try {
+          return await navigator.mediaDevices.getUserMedia(constraints);
+        } catch {
+          return null;
+        }
       };
 
-      const newStream = await navigator.mediaDevices.getUserMedia(constraints);
-      setStream(newStream);
+      let newStream = await tryConstraints({
+        video: { 
+          facingMode: { exact: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+        audio: false 
+      });
+
+      if (!newStream) {
+        newStream = await tryConstraints({
+          video: { facingMode: "environment" },
+          audio: false 
+        });
+      }
+
+      if (!newStream) {
+        newStream = await tryConstraints({
+          video: true,
+          audio: false 
+        });
+      }
+
+      if (newStream) {
+        setStream(newStream);
+        return;
+      }
+
+      throw new Error("All camera access attempts failed");
       
     } catch (err) {
       console.error("Camera error:", err);
-      
-      // Retry with fallback (any camera) if first attempt failed and requested
-      if (retry) {
-        console.log("Retrying with fallback constraints...");
-        try {
-            const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
-            setStream(fallbackStream);
-            return; // Success on retry
-        } catch (fallbackErr) {
-            console.error("Fallback camera error:", fallbackErr);
-        }
-      }
 
       setCameraError("Unable to access camera. Please check permissions.");
       setIsScanning(false);
@@ -174,7 +187,7 @@ export default function Scan() {
   };
 
   const handleRetry = () => {
-    startCamera(true);
+    startCamera();
   };
 
   return (
