@@ -16,10 +16,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col w-full md:max-w-md md:mx-auto bg-background md:shadow-2xl relative overflow-hidden md:my-4 md:rounded-[3rem] md:border-4 md:border-stone-900/5">
+      <div 
+        className="absolute inset-0 pointer-events-none z-0 transition-all duration-300"
+        style={{ backgroundImage: 'var(--holiday-background, none)' }}
+      />
       {/* Top Status Bar Decoration (Simulated - only visible on desktop/preview) */}
       <div className="h-1 bg-primary w-full absolute top-0 z-50 opacity-50 md:hidden" />
 
-      <main className="flex-1 overflow-y-auto pb-24 px-4 pt-6 scrollbar-hide">
+      <main className="flex-1 overflow-y-auto pb-24 px-4 pt-6 scrollbar-hide relative z-10">
         {children}
       </main>
 

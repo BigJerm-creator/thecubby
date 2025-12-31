@@ -114,15 +114,6 @@
     background-image: radial-gradient(hsl(var(--foreground) / 0.03) 1px, transparent 1px);
     background-size: 24px 24px;
   }
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: -1;
-    background-image: var(--holiday-background, none);
-    transition: background-image 0.3s ease;
-  }
   h1, h2, h3, h4, h5, h6 {
     @apply font-serif font-medium;
   }
