@@ -97,6 +97,10 @@ export const userProfiles = pgTable("user_profiles", {
   weightUnit: text("weight_unit").default("lbs"),
   dietaryPreferences: text("dietary_preferences").array(),
   restrictions: text("restrictions").array(),
+  themeMode: text("theme_mode").default("light"),
+  iconStyle: text("icon_style").default("default"),
+  colorTheme: text("color_theme").default("farmhouse"),
+  background: text("background").default("none"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
   updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
@@ -110,6 +114,10 @@ export const insertUserProfileSchema = createInsertSchema(userProfiles, {
   weightUnit: z.string().nullable().optional(),
   dietaryPreferences: z.array(z.string()).nullable().optional(),
   restrictions: z.array(z.string()).nullable().optional(),
+  themeMode: z.string().nullable().optional(),
+  iconStyle: z.string().nullable().optional(),
+  colorTheme: z.string().nullable().optional(),
+  background: z.string().nullable().optional(),
 }).omit({
   id: true,
   createdAt: true,

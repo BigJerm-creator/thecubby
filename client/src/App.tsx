@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { InventoryProvider } from "@/lib/InventoryContext";
 import { ShoppingListProvider } from "@/lib/ShoppingListContext";
+import { ThemeProvider } from "@/lib/ThemeContext";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import Kitchen from "@/pages/Kitchen";
@@ -17,6 +18,7 @@ import Search from "@/pages/Search";
 import Settings from "@/pages/Settings";
 import RecipeGenerator from "@/pages/RecipeGenerator";
 import Profile from "@/pages/Profile";
+import Appearance from "@/pages/Appearance";
 
 function Router() {
   return (
@@ -31,6 +33,7 @@ function Router() {
       <Route path="/search" component={Search} />
       <Route path="/settings" component={Settings} />
       <Route path="/profile" component={Profile} />
+      <Route path="/appearance" component={Appearance} />
       <Route path="/recipes" component={RecipeGenerator} />
       <Route component={NotFound} />
     </Switch>
@@ -40,14 +43,16 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <InventoryProvider>
-        <ShoppingListProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Router />
-          </TooltipProvider>
-        </ShoppingListProvider>
-      </InventoryProvider>
+      <ThemeProvider>
+        <InventoryProvider>
+          <ShoppingListProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Router />
+            </TooltipProvider>
+          </ShoppingListProvider>
+        </InventoryProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

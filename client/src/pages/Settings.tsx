@@ -49,24 +49,39 @@ export default function Settings() {
         <div className="space-y-4">
           <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1">Preferences</h3>
           <div className="bg-card border border-border rounded-2xl overflow-hidden divide-y divide-border/50">
-            {[
-              { icon: Bell, label: "Notifications" },
-              { icon: Moon, label: "Appearance" },
-              { icon: Shield, label: "Privacy & Security" },
-            ].map((item, i) => (
-              <button 
-                key={i} 
-                onClick={() => handleMenuClick(item.label)}
-                className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors text-left"
-                data-testid={`button-settings-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
-              >
-                <div className="flex items-center gap-3">
-                  <item.icon size={20} className="text-muted-foreground" />
-                  <span className="text-foreground">{item.label}</span>
-                </div>
-                <ChevronRight size={16} className="text-muted-foreground" />
-              </button>
-            ))}
+            <button 
+              onClick={() => handleMenuClick("Notifications")}
+              className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors text-left"
+              data-testid="button-settings-notifications"
+            >
+              <div className="flex items-center gap-3">
+                <Bell size={20} className="text-muted-foreground" />
+                <span className="text-foreground">Notifications</span>
+              </div>
+              <ChevronRight size={16} className="text-muted-foreground" />
+            </button>
+            <button 
+              onClick={() => setLocation("/appearance")}
+              className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors text-left"
+              data-testid="button-settings-appearance"
+            >
+              <div className="flex items-center gap-3">
+                <Moon size={20} className="text-muted-foreground" />
+                <span className="text-foreground">Appearance</span>
+              </div>
+              <ChevronRight size={16} className="text-muted-foreground" />
+            </button>
+            <button 
+              onClick={() => handleMenuClick("Privacy & Security")}
+              className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors text-left"
+              data-testid="button-settings-privacy-security"
+            >
+              <div className="flex items-center gap-3">
+                <Shield size={20} className="text-muted-foreground" />
+                <span className="text-foreground">Privacy & Security</span>
+              </div>
+              <ChevronRight size={16} className="text-muted-foreground" />
+            </button>
           </div>
 
           <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1 mt-6">Support</h3>
