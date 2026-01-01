@@ -103,9 +103,9 @@ export default function RecipeGenerator() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-6">
+    <div className="min-h-screen p-6">
       <div className="max-w-md mx-auto space-y-6">
-        <header className="flex items-center gap-4">
+        <header className="flex items-center gap-4 bg-card/95 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-border/50">
           <Button
             variant="ghost"
             size="icon"
@@ -120,7 +120,7 @@ export default function RecipeGenerator() {
           </div>
         </header>
 
-        <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+        <Card className="bg-card/95 backdrop-blur-sm border-primary/20 shadow-md">
           <CardContent className="p-6 text-center">
             <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4">
               <ChefHat className="h-8 w-8 text-primary" />
@@ -158,7 +158,7 @@ export default function RecipeGenerator() {
         </Card>
 
         {error && (
-          <Card className="border-destructive/50 bg-destructive/5">
+          <Card className="border-destructive/50 bg-card/95 backdrop-blur-sm shadow-md">
             <CardContent className="p-4 text-center text-destructive">
               {error}
             </CardContent>
@@ -166,7 +166,7 @@ export default function RecipeGenerator() {
         )}
 
         {recipe && (
-          <Card className="overflow-hidden">
+          <Card className="overflow-hidden bg-card/95 backdrop-blur-sm shadow-md">
             <CardContent className="p-6" ref={recipeRef}>
               <div className="prose prose-sm max-w-none">
                 {formatRecipe(recipe)}
