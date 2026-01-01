@@ -51,7 +51,7 @@ export default function Home() {
         {/* Recipe Generator */}
         <button
           onClick={() => setLocation("/recipes")}
-          className="w-full bg-gradient-to-r from-primary/10 to-primary/5 p-4 rounded-2xl border border-primary/20 hover:border-primary/40 transition-colors text-left flex items-center gap-4"
+          className="w-full bg-card/95 backdrop-blur-sm p-4 rounded-2xl border border-primary/30 hover:border-primary/50 transition-colors text-left flex items-center gap-4 shadow-sm"
           data-testid="button-recipe-generator"
         >
           <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
