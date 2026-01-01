@@ -6,8 +6,9 @@ export interface InventoryItem {
   id: number;
   name: string;
   brand: string | null;
+  amount: number | null;
+  amountUnit: string | null;
   quantity: number;
-  unit: string;
   expiryDate?: string | null;
   category: string;
   barcode?: string | null;
@@ -49,10 +50,11 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       const cleanItem: Record<string, unknown> = {
         name: item.name,
         quantity: item.quantity,
-        unit: item.unit,
         category: item.category,
       };
       if (item.brand) cleanItem.brand = item.brand;
+      if (item.amount) cleanItem.amount = item.amount;
+      if (item.amountUnit) cleanItem.amountUnit = item.amountUnit;
       if (item.expiryDate) cleanItem.expiryDate = item.expiryDate;
       if (item.barcode) cleanItem.barcode = item.barcode;
       await apiRequest('POST', '/api/inventory', cleanItem);

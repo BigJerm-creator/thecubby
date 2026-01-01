@@ -108,8 +108,13 @@ export default function CategoryView() {
                 <div className="flex items-center gap-2">
                   <div className="flex flex-col items-end">
                     <span className="text-lg font-serif font-medium text-primary">
-                      {item.quantity} <span className="text-xs font-sans text-muted-foreground">{item.unit}</span>
+                      {item.quantity}x
                     </span>
+                    {item.amount && item.amountUnit && (
+                      <span className="text-xs text-muted-foreground">
+                        {item.amount} {item.amountUnit}
+                      </span>
+                    )}
                   </div>
                   
                   <button 

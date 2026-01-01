@@ -21,8 +21,9 @@ export const inventoryItems = pgTable("inventory_items", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   brand: text("brand"),
-  quantity: doublePrecision("quantity").notNull().default(1),
-  unit: text("unit").notNull().default("count"),
+  amount: doublePrecision("amount"),
+  amountUnit: text("amount_unit"),
+  quantity: integer("quantity").notNull().default(1),
   category: text("category").notNull(),
   expiryDate: text("expiry_date"),
   barcode: text("barcode"),
@@ -31,6 +32,8 @@ export const inventoryItems = pgTable("inventory_items", {
 
 export const insertInventoryItemSchema = createInsertSchema(inventoryItems, {
   brand: z.string().nullable().optional(),
+  amount: z.number().nullable().optional(),
+  amountUnit: z.string().nullable().optional(),
   expiryDate: z.string().nullable().optional(),
   barcode: z.string().nullable().optional(),
 }).omit({

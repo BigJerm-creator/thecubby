@@ -82,7 +82,10 @@ export default function ExpiredItems() {
 
                   <div className="flex items-center gap-2">
                     <span className="text-lg font-serif font-medium text-muted-foreground">
-                      {item.quantity} <span className="text-xs font-sans">{item.unit}</span>
+                      {item.quantity}x
+                      {item.amount && item.amountUnit && (
+                        <span className="text-xs font-sans ml-1">{item.amount} {item.amountUnit}</span>
+                      )}
                     </span>
                     <button 
                       onClick={() => handleDelete(item)}

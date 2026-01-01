@@ -52,8 +52,9 @@ export default function ManualEntry() {
     name: "",
     brand: "",
     category: "spices",
-    quantity: "",
-    unit: "oz",
+    amount: "",
+    amountUnit: "oz",
+    quantity: "1",
     expiryDate: "",
   });
 
@@ -105,10 +106,10 @@ export default function ManualEntry() {
       return;
     }
 
-    if (!formData.quantity || parseFloat(formData.quantity) <= 0) {
+    if (!formData.quantity || parseInt(formData.quantity) <= 0) {
       toast({
         title: "Invalid Quantity",
-        description: "Please enter a valid quantity",
+        description: "Please enter how many you have",
         variant: "destructive"
       });
       return;
@@ -120,8 +121,9 @@ export default function ManualEntry() {
       await addItem({
         name: formData.name,
         brand: formData.brand || null,
-        quantity: parseFloat(formData.quantity),
-        unit: formData.unit,
+        amount: formData.amount ? parseFloat(formData.amount) : null,
+        amountUnit: formData.amount ? formData.amountUnit : null,
+        quantity: parseInt(formData.quantity),
         expiryDate: formData.expiryDate || null,
         category: formData.category
       });
@@ -334,34 +336,51 @@ export default function ManualEntry() {
             </select>
           </div>
 
+          <div>
+            <label className="text-sm font-medium text-foreground block mb-2">
+              How many do you have? *
+            </label>
+            <input
+              type="number"
+              name="quantity"
+              value={formData.quantity}
+              onChange={handleInputChange}
+              placeholder="1"
+              step="1"
+              min="1"
+              className="w-full px-4 py-2 bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              data-testid="input-quantity"
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-sm font-medium text-foreground block mb-2">
-                Quantity *
+                Size/Volume
               </label>
               <input
                 type="number"
-                name="quantity"
-                value={formData.quantity}
+                name="amount"
+                value={formData.amount}
                 onChange={handleInputChange}
-                placeholder="0"
+                placeholder="e.g., 24"
                 step="0.1"
                 min="0"
                 className="w-full px-4 py-2 bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                data-testid="input-quantity"
+                data-testid="input-amount"
               />
             </div>
 
             <div>
               <label className="text-sm font-medium text-foreground block mb-2">
-                Unit *
+                Unit
               </label>
               <select
-                name="unit"
-                value={formData.unit}
+                name="amountUnit"
+                value={formData.amountUnit}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
-                data-testid="select-unit"
+                data-testid="select-amount-unit"
               >
                 {UNIT_OPTIONS.map(unit => (
                   <option key={unit.value} value={unit.value}>{unit.label}</option>

@@ -48,7 +48,12 @@ export default function Search() {
                     <h3 className="font-medium text-foreground">{item.name}</h3>
                     <p className="text-xs text-muted-foreground">{item.brand ? `${item.brand} • ` : ''}{item.category}</p>
                   </div>
-                  <span className="font-medium text-primary">{item.quantity} {item.unit}</span>
+                  <span className="font-medium text-primary">
+                    {item.quantity}x
+                    {item.amount && item.amountUnit && (
+                      <span className="text-sm text-muted-foreground ml-1">({item.amount} {item.amountUnit})</span>
+                    )}
+                  </span>
                 </div>
               ))
             ) : (
