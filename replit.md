@@ -32,9 +32,10 @@ Preferred communication style: Simple, everyday language.
 
 ### Key Data Models
 - **Users**: Basic authentication structure (id, username, password)
-- **Inventory Items**: Name, brand, quantity, unit, category, expiry date, barcode
+- **Inventory Items**: Name, brand, quantity (count), amount/amountUnit (size/volume), category, expiry date, barcode
 - **Shopping List Items**: Name, category, checked status
 - **Conversations/Messages**: AI chat history for recipe generation
+- **Recipes**: Title, description, ingredients (array), instructions, prep/cook time, servings, category, source, favorite status
 
 ### API Structure
 - `GET/POST /api/inventory` - Inventory CRUD operations
@@ -42,13 +43,17 @@ Preferred communication style: Simple, everyday language.
 - `GET /api/inventory/expired` - Expired items query
 - `GET/POST/PATCH/DELETE /api/shopping-list` - Shopping list management
 - `POST /api/generate-recipe` - AI recipe generation with streaming
+- `GET/POST/PATCH/DELETE /api/recipes` - Recipe Book CRUD operations
+- `POST /api/recipes/parse-pdf` - Upload PDF and extract recipe using AI
 
 ### Feature Modules
 - **Barcode Scanning**: ZXing library for camera-based barcode detection
+- **Recipe Book**: Store and manage recipes with PDF upload and AI extraction
 - **AI Integration**: Replit-specific OpenAI integration modules in `server/replit_integrations/`
   - Chat routes for conversation management
   - Image generation capabilities
   - Batch processing utilities with rate limiting
+  - PDF-to-recipe extraction using OpenAI
 
 ### Build Configuration
 - Development: Vite dev server with HMR on port 5000
@@ -69,6 +74,8 @@ Preferred communication style: Simple, everyday language.
 - **Framer Motion**: Animation library
 - **date-fns**: Date manipulation and formatting
 - **Zod**: Runtime schema validation (shared with drizzle-zod)
+- **pdf-parse**: PDF text extraction for recipe upload
+- **multer**: File upload handling middleware
 
 ### Replit-Specific Integrations
 - `@replit/vite-plugin-runtime-error-modal`: Development error overlay
