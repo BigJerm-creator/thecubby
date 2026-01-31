@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertInventoryItemSchema, insertShoppingListItemSchema, insertUserProfileSchema, insertRecipeSchema } from "@shared/schema";
+import { insertInventoryItemSchema, insertShoppingListItemSchema, insertUserProfileSchema, insertRecipeSchema, insertMealPlanSchema } from "@shared/schema";
 import OpenAI from "openai";
 import multer from "multer";
 import { createRequire } from 'module';
@@ -500,6 +500,62 @@ Only return the JSON object, no additional text or markdown.`
     } catch (error) {
       console.error("Error parsing PDF:", error);
       res.status(500).json({ error: "Failed to process PDF" });
+    }
+  });
+
+  // Meal Plan routes
+  app.get("/api/meal-plans", async (req, res) => {
+    try {
+      const { startDate, endDate, date } = req.query;
+      let plans;
+      if (date) {
+        plans = await storage.getMealPlansByDate(date as string);
+      } else if (startDate && endDate) {
+        plans = await storage.getMealPlansByDateRange(startDate as string, endDate as string);
+      } else {
+        plans = await storage.getMealPlans();
+      }
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching meal plans:", error);
+      res.status(500).json({ error: "Failed to fetch meal plans" });
+    }
+  });
+
+  app.post("/api/meal-plans", async (req, res) => {
+    try {
+      const parsed = insertMealPlanSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.message });
+      }
+      const mealPlan = await storage.createMealPlan(parsed.data);
+      res.status(201).json(mealPlan);
+    } catch (error) {
+      console.error("Error creating meal plan:", error);
+      res.status(500).json({ error: "Failed to create meal plan" });
+    }
+  });
+
+  app.patch("/api/meal-plans/:id", async (req, res) => {
+    try {
+      const mealPlan = await storage.updateMealPlan(parseInt(req.params.id), req.body);
+      if (!mealPlan) {
+        return res.status(404).json({ error: "Meal plan not found" });
+      }
+      res.json(mealPlan);
+    } catch (error) {
+      console.error("Error updating meal plan:", error);
+      res.status(500).json({ error: "Failed to update meal plan" });
+    }
+  });
+
+  app.delete("/api/meal-plans/:id", async (req, res) => {
+    try {
+      await storage.deleteMealPlan(parseInt(req.params.id));
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting meal plan:", error);
+      res.status(500).json({ error: "Failed to delete meal plan" });
     }
   });
 

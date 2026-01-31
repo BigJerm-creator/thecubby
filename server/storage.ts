@@ -5,10 +5,11 @@ import {
   type Conversation, type InsertConversation, conversations,
   type Message, type InsertMessage, messages,
   type UserProfile, type InsertUserProfile, userProfiles,
-  type Recipe, type InsertRecipe, recipes
+  type Recipe, type InsertRecipe, recipes,
+  type MealPlan, type InsertMealPlan, mealPlans
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, lt } from "drizzle-orm";
+import { eq, desc, lt, gte, lte, and } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -41,6 +42,13 @@ export interface IStorage {
   createRecipe(recipe: InsertRecipe): Promise<Recipe>;
   updateRecipe(id: number, recipe: Partial<InsertRecipe>): Promise<Recipe | undefined>;
   deleteRecipe(id: number): Promise<void>;
+  
+  getMealPlans(): Promise<MealPlan[]>;
+  getMealPlansByDateRange(startDate: string, endDate: string): Promise<MealPlan[]>;
+  getMealPlansByDate(date: string): Promise<MealPlan[]>;
+  createMealPlan(mealPlan: InsertMealPlan): Promise<MealPlan>;
+  updateMealPlan(id: number, mealPlan: Partial<InsertMealPlan>): Promise<MealPlan | undefined>;
+  deleteMealPlan(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -170,6 +178,34 @@ export class DatabaseStorage implements IStorage {
 
   async deleteRecipe(id: number): Promise<void> {
     await db.delete(recipes).where(eq(recipes.id, id));
+  }
+
+  async getMealPlans(): Promise<MealPlan[]> {
+    return db.select().from(mealPlans).orderBy(mealPlans.date);
+  }
+
+  async getMealPlansByDateRange(startDate: string, endDate: string): Promise<MealPlan[]> {
+    return db.select().from(mealPlans)
+      .where(and(gte(mealPlans.date, startDate), lte(mealPlans.date, endDate)))
+      .orderBy(mealPlans.date);
+  }
+
+  async getMealPlansByDate(date: string): Promise<MealPlan[]> {
+    return db.select().from(mealPlans).where(eq(mealPlans.date, date));
+  }
+
+  async createMealPlan(mealPlan: InsertMealPlan): Promise<MealPlan> {
+    const [created] = await db.insert(mealPlans).values(mealPlan).returning();
+    return created;
+  }
+
+  async updateMealPlan(id: number, mealPlan: Partial<InsertMealPlan>): Promise<MealPlan | undefined> {
+    const [updated] = await db.update(mealPlans).set(mealPlan).where(eq(mealPlans.id, id)).returning();
+    return updated;
+  }
+
+  async deleteMealPlan(id: number): Promise<void> {
+    await db.delete(mealPlans).where(eq(mealPlans.id, id));
   }
 }
 
