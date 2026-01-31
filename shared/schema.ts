@@ -164,3 +164,25 @@ export const insertRecipeSchema = createInsertSchema(recipes, {
 
 export type InsertRecipe = z.infer<typeof insertRecipeSchema>;
 export type Recipe = typeof recipes.$inferSelect;
+
+export const mealPlans = pgTable("meal_plans", {
+  id: serial("id").primaryKey(),
+  date: text("date").notNull(),
+  mealType: text("meal_type").notNull(),
+  recipeId: integer("recipe_id"),
+  customMealName: text("custom_meal_name"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const insertMealPlanSchema = createInsertSchema(mealPlans, {
+  recipeId: z.number().nullable().optional(),
+  customMealName: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+}).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertMealPlan = z.infer<typeof insertMealPlanSchema>;
+export type MealPlan = typeof mealPlans.$inferSelect;
