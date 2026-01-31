@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ArrowLeft, ChefHat, Loader2, Sparkles, BookPlus, Check } from "lucide-react";
@@ -8,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function RecipeGenerator() {
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const { inventory, isLoading: inventoryLoading } = useInventory();
   const [recipe, setRecipe] = useState("");
@@ -128,6 +130,7 @@ export default function RecipeGenerator() {
       if (!res.ok) throw new Error("Failed to save recipe");
       
       setIsSaved(true);
+      queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
       toast({ title: "Recipe saved to your Recipe Book!" });
     } catch (err) {
       toast({ 
