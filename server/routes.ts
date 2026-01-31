@@ -373,7 +373,7 @@ export async function registerRoutes(
     }
   });
 
-  // Image to Recipe conversion (supports multiple images)
+  // Image to Recipe conversion (multiple images = single recipe)
   app.post("/api/recipes/parse-image", upload.array("images", 10), async (req, res) => {
     try {
       const files = req.files as Express.Multer.File[];
@@ -381,20 +381,25 @@ export async function registerRoutes(
         return res.status(400).json({ error: "No image files uploaded" });
       }
 
-      const results: any[] = [];
-      const errors: string[] = [];
-
+      const imageContents: any[] = [];
+      
       for (const file of files) {
-        try {
-          const base64Image = file.buffer.toString("base64");
-          const mimeType = file.mimetype || "image/jpeg";
+        const base64Image = file.buffer.toString("base64");
+        const mimeType = file.mimetype || "image/jpeg";
+        imageContents.push({
+          type: "image_url",
+          image_url: {
+            url: `data:${mimeType};base64,${base64Image}`
+          }
+        });
+      }
 
-          const response = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: [
-              {
-                role: "system",
-                content: `You are a recipe extraction assistant. Extract recipe information from the provided image and return it as valid JSON with the following structure:
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are a recipe extraction assistant. Extract recipe information from the provided image(s) and return it as valid JSON with the following structure:
 {
   "title": "Recipe Name",
   "description": "Brief description of the dish",
@@ -405,43 +410,36 @@ export async function registerRoutes(
   "servings": "number of servings (e.g., '4 servings')",
   "category": "one of: breakfast, lunch, dinner, dessert, snack, appetizer, beverage, other"
 }
+If multiple images are provided, they are parts of the SAME recipe. Combine all the information from all images into a single complete recipe.
 Only return the JSON object, no additional text or markdown. If you cannot read all the text clearly, do your best to extract what you can see.`
-              },
+          },
+          {
+            role: "user",
+            content: [
               {
-                role: "user",
-                content: [
-                  {
-                    type: "text",
-                    text: "Please extract the recipe information from this image:"
-                  },
-                  {
-                    type: "image_url",
-                    image_url: {
-                      url: `data:${mimeType};base64,${base64Image}`
-                    }
-                  }
-                ]
-              }
-            ],
-            max_tokens: 2000,
-          });
+                type: "text",
+                text: files.length > 1 
+                  ? `Please extract and combine the recipe information from these ${files.length} images into one complete recipe:`
+                  : "Please extract the recipe information from this image:"
+              },
+              ...imageContents
+            ]
+          }
+        ],
+        max_tokens: 3000,
+      });
 
-          const content = response.choices[0]?.message?.content || "";
-          const cleanedContent = content.replace(/```json\n?|\n?```/g, "").trim();
-          const recipeData = JSON.parse(cleanedContent);
-          recipeData.source = "Image Upload";
-          results.push(recipeData);
-        } catch (fileError) {
-          console.error("Error processing image:", file.originalname, fileError);
-          errors.push(file.originalname || "unknown");
-        }
+      const content = response.choices[0]?.message?.content || "";
+      
+      try {
+        const cleanedContent = content.replace(/```json\n?|\n?```/g, "").trim();
+        const recipeData = JSON.parse(cleanedContent);
+        recipeData.source = "Image Upload";
+        res.json(recipeData);
+      } catch (parseError) {
+        console.error("Failed to parse AI response:", content);
+        res.status(500).json({ error: "Failed to parse recipe from images" });
       }
-
-      if (results.length === 0) {
-        return res.status(500).json({ error: "Failed to parse any recipes from images" });
-      }
-
-      res.json({ recipes: results, errors: errors.length > 0 ? errors : undefined });
     } catch (error) {
       console.error("Error parsing images:", error);
       res.status(500).json({ error: "Failed to process images" });
