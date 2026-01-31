@@ -129,3 +129,38 @@ export const insertUserProfileSchema = createInsertSchema(userProfiles, {
 
 export type InsertUserProfile = z.infer<typeof insertUserProfileSchema>;
 export type UserProfile = typeof userProfiles.$inferSelect;
+
+export const recipes = pgTable("recipes", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  ingredients: text("ingredients").array(),
+  instructions: text("instructions"),
+  prepTime: text("prep_time"),
+  cookTime: text("cook_time"),
+  servings: text("servings"),
+  category: text("category"),
+  source: text("source"),
+  isFavorite: boolean("is_favorite").notNull().default(false),
+  createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: timestamp("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const insertRecipeSchema = createInsertSchema(recipes, {
+  description: z.string().nullable().optional(),
+  ingredients: z.array(z.string()).nullable().optional(),
+  instructions: z.string().nullable().optional(),
+  prepTime: z.string().nullable().optional(),
+  cookTime: z.string().nullable().optional(),
+  servings: z.string().nullable().optional(),
+  category: z.string().nullable().optional(),
+  source: z.string().nullable().optional(),
+  isFavorite: z.boolean().optional(),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertRecipe = z.infer<typeof insertRecipeSchema>;
+export type Recipe = typeof recipes.$inferSelect;

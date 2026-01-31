@@ -4,7 +4,8 @@ import {
   type ShoppingListItem, type InsertShoppingListItem, shoppingListItems,
   type Conversation, type InsertConversation, conversations,
   type Message, type InsertMessage, messages,
-  type UserProfile, type InsertUserProfile, userProfiles
+  type UserProfile, type InsertUserProfile, userProfiles,
+  type Recipe, type InsertRecipe, recipes
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, lt } from "drizzle-orm";
@@ -34,6 +35,12 @@ export interface IStorage {
   
   getUserProfile(): Promise<UserProfile | undefined>;
   upsertUserProfile(profile: InsertUserProfile): Promise<UserProfile>;
+  
+  getRecipes(): Promise<Recipe[]>;
+  getRecipe(id: number): Promise<Recipe | undefined>;
+  createRecipe(recipe: InsertRecipe): Promise<Recipe>;
+  updateRecipe(id: number, recipe: Partial<InsertRecipe>): Promise<Recipe | undefined>;
+  deleteRecipe(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -137,6 +144,32 @@ export class DatabaseStorage implements IStorage {
       const [created] = await db.insert(userProfiles).values(profile).returning();
       return created;
     }
+  }
+
+  async getRecipes(): Promise<Recipe[]> {
+    return db.select().from(recipes).orderBy(desc(recipes.createdAt));
+  }
+
+  async getRecipe(id: number): Promise<Recipe | undefined> {
+    const [recipe] = await db.select().from(recipes).where(eq(recipes.id, id));
+    return recipe;
+  }
+
+  async createRecipe(recipe: InsertRecipe): Promise<Recipe> {
+    const [created] = await db.insert(recipes).values(recipe).returning();
+    return created;
+  }
+
+  async updateRecipe(id: number, recipe: Partial<InsertRecipe>): Promise<Recipe | undefined> {
+    const [updated] = await db.update(recipes)
+      .set({ ...recipe, updatedAt: new Date() })
+      .where(eq(recipes.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteRecipe(id: number): Promise<void> {
+    await db.delete(recipes).where(eq(recipes.id, id));
   }
 }
 
