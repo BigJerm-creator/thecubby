@@ -4,7 +4,9 @@ import { storage } from "./storage";
 import { insertInventoryItemSchema, insertShoppingListItemSchema, insertUserProfileSchema, insertRecipeSchema } from "@shared/schema";
 import OpenAI from "openai";
 import multer from "multer";
-import pdfParse from "pdf-parse";
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pdfParse = require("pdf-parse");
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -248,7 +250,11 @@ export async function registerRoutes(
     try {
       const items = await storage.getInventoryItems();
       const profile = await storage.getUserProfile();
-      const ingredientsList = items.map(item => `${item.quantity} ${item.unit} ${item.name}${item.brand ? ` (${item.brand})` : ''}`).join(", ");
+      const ingredientsList = items.map(item => {
+        const amountStr = item.amount && item.amountUnit ? `${item.amount} ${item.amountUnit}` : '';
+        const qtyStr = item.quantity > 1 ? `${item.quantity}x` : '';
+        return `${qtyStr} ${item.name}${amountStr ? ` (${amountStr})` : ''}${item.brand ? ` - ${item.brand}` : ''}`;
+      }).join(", ");
       
       if (items.length === 0) {
         return res.status(400).json({ error: "No ingredients in your pantry. Add some items first!" });

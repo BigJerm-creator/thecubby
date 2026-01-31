@@ -1,5 +1,5 @@
 import Layout from "@/components/layout";
-import { Package, AlertCircle, ShoppingCart, ChefHat } from "lucide-react";
+import { Package, AlertCircle, ShoppingCart, ChefHat, Book } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useInventory } from "@/lib/InventoryContext";
 import { useShoppingList } from "@/lib/ShoppingListContext";
@@ -48,20 +48,36 @@ export default function Home() {
           </button>
         </div>
 
-        {/* Recipe Generator */}
-        <button
-          onClick={() => setLocation("/recipes")}
-          className="w-full bg-card/95 backdrop-blur-sm p-4 rounded-2xl border border-primary/30 hover:border-primary/50 transition-colors text-left flex items-center gap-4 shadow-sm"
-          data-testid="button-recipe-generator"
-        >
-          <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
-            <ChefHat className="text-primary" size={24} />
-          </div>
-          <div>
-            <h3 className="font-serif font-medium text-foreground">Recipe Generator</h3>
-            <p className="text-xs text-muted-foreground">Create recipes from your ingredients using AI</p>
-          </div>
-        </button>
+        {/* Recipe Generator & Recipe Book */}
+        <div className="space-y-3">
+          <button
+            onClick={() => setLocation("/recipes")}
+            className="w-full bg-card/95 backdrop-blur-sm p-4 rounded-2xl border border-primary/30 hover:border-primary/50 transition-colors text-left flex items-center gap-4 shadow-sm"
+            data-testid="button-recipe-generator"
+          >
+            <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
+              <ChefHat className="text-primary" size={24} />
+            </div>
+            <div>
+              <h3 className="font-serif font-medium text-foreground">Recipe Generator</h3>
+              <p className="text-xs text-muted-foreground">Create recipes from your ingredients using AI</p>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setLocation("/recipe-book")}
+            className="w-full bg-card/95 backdrop-blur-sm p-4 rounded-2xl border border-amber-500/30 hover:border-amber-500/50 transition-colors text-left flex items-center gap-4 shadow-sm"
+            data-testid="button-recipe-book"
+          >
+            <div className="h-12 w-12 rounded-full bg-amber-500/20 flex items-center justify-center">
+              <Book className="text-amber-600" size={24} />
+            </div>
+            <div>
+              <h3 className="font-serif font-medium text-foreground">Recipe Book</h3>
+              <p className="text-xs text-muted-foreground">Store and manage your favorite recipes</p>
+            </div>
+          </button>
+        </div>
 
         {/* Recent Activity / Low Stock */}
         <section>

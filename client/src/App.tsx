@@ -17,6 +17,7 @@ import ShoppingListPage from "@/pages/ShoppingList";
 import Search from "@/pages/Search";
 import Settings from "@/pages/Settings";
 import RecipeGenerator from "@/pages/RecipeGenerator";
+import RecipeBook from "@/pages/RecipeBook";
 import Profile from "@/pages/Profile";
 import Appearance from "@/pages/Appearance";
 
@@ -35,6 +36,7 @@ function Router() {
       <Route path="/profile" component={Profile} />
       <Route path="/appearance" component={Appearance} />
       <Route path="/recipes" component={RecipeGenerator} />
+      <Route path="/recipe-book" component={RecipeBook} />
       <Route component={NotFound} />
     </Switch>
   );
