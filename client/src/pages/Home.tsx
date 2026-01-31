@@ -1,8 +1,25 @@
 import Layout from "@/components/layout";
-import { Package, AlertCircle, ShoppingCart, ChefHat, Book } from "lucide-react";
+import { Package, AlertCircle, ShoppingCart, ChefHat, Book, CalendarDays, Coffee, Sun, Moon, Cookie } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useInventory } from "@/lib/InventoryContext";
 import { useShoppingList } from "@/lib/ShoppingListContext";
+import { useQuery } from "@tanstack/react-query";
+import { format } from "date-fns";
+import type { MealPlan, Recipe } from "@shared/schema";
+
+const mealTypeIcons: Record<string, any> = {
+  breakfast: Coffee,
+  lunch: Sun,
+  dinner: Moon,
+  snack: Cookie,
+};
+
+const mealTypeColors: Record<string, string> = {
+  breakfast: "bg-amber-100 text-amber-800",
+  lunch: "bg-emerald-100 text-emerald-800",
+  dinner: "bg-purple-100 text-purple-800",
+  snack: "bg-rose-100 text-rose-800",
+};
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -10,6 +27,30 @@ export default function Home() {
   const { items: shoppingItems } = useShoppingList();
   const expiredCount = getExpiredItems().length;
   const shoppingListCount = shoppingItems.filter(item => !item.checked).length;
+
+  const today = format(new Date(), "yyyy-MM-dd");
+  
+  const { data: todaysMeals = [] } = useQuery<MealPlan[]>({
+    queryKey: ["/api/meal-plans", today],
+    queryFn: async () => {
+      const res = await fetch(`/api/meal-plans?date=${today}`);
+      return res.json();
+    },
+  });
+
+  const { data: recipes = [] } = useQuery<Recipe[]>({
+    queryKey: ["/api/recipes"],
+    queryFn: async () => {
+      const res = await fetch("/api/recipes");
+      return res.json();
+    },
+  });
+
+  const getRecipeTitle = (recipeId: number | null) => {
+    if (!recipeId) return null;
+    const recipe = recipes.find((r) => r.id === recipeId);
+    return recipe?.title || "Unknown Recipe";
+  };
 
   return (
     <Layout>
@@ -77,7 +118,54 @@ export default function Home() {
               <p className="text-xs text-muted-foreground">Store and manage your favorite recipes</p>
             </div>
           </button>
+
+          <button
+            onClick={() => setLocation("/meal-plan")}
+            className="w-full bg-card/95 backdrop-blur-sm p-4 rounded-2xl border border-violet-500/30 hover:border-violet-500/50 transition-colors text-left flex items-center gap-4 shadow-sm"
+            data-testid="button-meal-plan"
+          >
+            <div className="h-12 w-12 rounded-full bg-violet-500/20 flex items-center justify-center">
+              <CalendarDays className="text-violet-600" size={24} />
+            </div>
+            <div>
+              <h3 className="font-serif font-medium text-foreground">Meal Plan</h3>
+              <p className="text-xs text-muted-foreground">Plan your meals for the week or month</p>
+            </div>
+          </button>
         </div>
+
+        {/* Today's Meals */}
+        {todaysMeals.length > 0 && (
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-serif font-medium">Today's Meals</h2>
+              <Link href="/meal-plan" className="text-xs text-primary font-bold tracking-wide uppercase">View Calendar</Link>
+            </div>
+            <div className="space-y-2">
+              {todaysMeals.map((meal) => {
+                const Icon = mealTypeIcons[meal.mealType] || CalendarDays;
+                const colorClass = mealTypeColors[meal.mealType] || "bg-gray-100 text-gray-800";
+                return (
+                  <div
+                    key={meal.id}
+                    className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border"
+                    data-testid={`today-meal-${meal.id}`}
+                  >
+                    <div className={`p-2 rounded-lg ${colorClass}`}>
+                      <Icon size={18} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium text-foreground">
+                        {meal.recipeId ? getRecipeTitle(meal.recipeId) : meal.customMealName}
+                      </p>
+                      <p className="text-xs text-muted-foreground capitalize">{meal.mealType}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
         {/* Recent Activity / Low Stock */}
         <section>

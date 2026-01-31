@@ -1,11 +1,15 @@
 import { useState, useRef } from "react";
 import Layout from "@/components/layout";
-import { Book, Plus, Upload, Heart, Clock, Users, Trash2, ChevronRight, X, Loader2, Camera } from "lucide-react";
+import { Book, Plus, Upload, Heart, Clock, Users, Trash2, ChevronRight, X, Loader2, Camera, CalendarPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { format, addDays } from "date-fns";
 import type { Recipe } from "@shared/schema";
 
 export default function RecipeBook() {
@@ -17,6 +21,11 @@ export default function RecipeBook() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadType, setUploadType] = useState<"pdf" | "image" | null>(null);
+  const [showMealPlanDialog, setShowMealPlanDialog] = useState(false);
+  const [mealPlanData, setMealPlanData] = useState({
+    date: format(new Date(), "yyyy-MM-dd"),
+    mealType: "dinner",
+  });
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -81,6 +90,47 @@ export default function RecipeBook() {
       queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
     },
   });
+
+  const addToMealPlanMutation = useMutation({
+    mutationFn: async (data: { date: string; mealType: string; recipeId: number }) => {
+      const res = await fetch("/api/meal-plans", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw new Error("Failed to add to meal plan");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/meal-plans"] });
+      setShowMealPlanDialog(false);
+      toast({ title: "Added to meal plan!" });
+    },
+    onError: () => {
+      toast({ title: "Failed to add to meal plan", variant: "destructive" });
+    },
+  });
+
+  const handleAddToMealPlan = () => {
+    if (!selectedRecipe) return;
+    addToMealPlanMutation.mutate({
+      date: mealPlanData.date,
+      mealType: mealPlanData.mealType,
+      recipeId: selectedRecipe.id,
+    });
+  };
+
+  const getDateOptions = () => {
+    const options = [];
+    for (let i = 0; i < 31; i++) {
+      const date = addDays(new Date(), i);
+      options.push({
+        value: format(date, "yyyy-MM-dd"),
+        label: format(date, "EEE, MMM d"),
+      });
+    }
+    return options;
+  };
 
   const resetForm = () => {
     setFormData({
@@ -296,7 +346,84 @@ export default function RecipeBook() {
             {selectedRecipe.source && (
               <p className="text-xs text-muted-foreground">Source: {selectedRecipe.source}</p>
             )}
+
+            <Button
+              onClick={() => setShowMealPlanDialog(true)}
+              className="w-full mt-4 gap-2"
+              variant="outline"
+              data-testid="button-add-to-meal-plan"
+            >
+              <CalendarPlus size={18} />
+              Add to Meal Plan
+            </Button>
           </div>
+
+          <Dialog open={showMealPlanDialog} onOpenChange={setShowMealPlanDialog}>
+            <DialogContent className="max-w-sm">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <CalendarPlus className="h-5 w-5 text-primary" />
+                  Add to Meal Plan
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  <Label className="text-sm">Date</Label>
+                  <Select
+                    value={mealPlanData.date}
+                    onValueChange={(value) => setMealPlanData(p => ({ ...p, date: value }))}
+                  >
+                    <SelectTrigger data-testid="select-meal-plan-date">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getDateOptions().map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm">Meal Type</Label>
+                  <Select
+                    value={mealPlanData.mealType}
+                    onValueChange={(value) => setMealPlanData(p => ({ ...p, mealType: value }))}
+                  >
+                    <SelectTrigger data-testid="select-meal-plan-type">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="breakfast">Breakfast</SelectItem>
+                      <SelectItem value="lunch">Lunch</SelectItem>
+                      <SelectItem value="dinner">Dinner</SelectItem>
+                      <SelectItem value="snack">Snack</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowMealPlanDialog(false)}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleAddToMealPlan}
+                    disabled={addToMealPlanMutation.isPending}
+                    className="flex-1"
+                    data-testid="button-confirm-meal-plan"
+                  >
+                    {addToMealPlanMutation.isPending ? "Adding..." : "Add"}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </Layout>
     );

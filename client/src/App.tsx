@@ -18,6 +18,7 @@ import Search from "@/pages/Search";
 import Settings from "@/pages/Settings";
 import RecipeGenerator from "@/pages/RecipeGenerator";
 import RecipeBook from "@/pages/RecipeBook";
+import MealPlan from "@/pages/MealPlan";
 import Profile from "@/pages/Profile";
 import Appearance from "@/pages/Appearance";
 
@@ -37,6 +38,7 @@ function Router() {
       <Route path="/appearance" component={Appearance} />
       <Route path="/recipes" component={RecipeGenerator} />
       <Route path="/recipe-book" component={RecipeBook} />
+      <Route path="/meal-plan" component={MealPlan} />
       <Route component={NotFound} />
     </Switch>
   );
