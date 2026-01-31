@@ -6,8 +6,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { InventoryProvider } from "@/lib/InventoryContext";
 import { ShoppingListProvider } from "@/lib/ShoppingListContext";
 import { ThemeProvider } from "@/lib/ThemeContext";
+import { useAuth } from "@/hooks/use-auth";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
+import Landing from "@/pages/Landing";
 import Kitchen from "@/pages/Kitchen";
 import CategoryView from "@/pages/CategoryView";
 import Scan from "@/pages/Scan";
@@ -22,7 +24,7 @@ import MealPlan from "@/pages/MealPlan";
 import Profile from "@/pages/Profile";
 import Appearance from "@/pages/Appearance";
 
-function Router() {
+function AuthenticatedRouter() {
   return (
     <Switch>
       <Route path="/" component={Home} />
@@ -42,6 +44,24 @@ function Router() {
       <Route component={NotFound} />
     </Switch>
   );
+}
+
+function Router() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Landing />;
+  }
+
+  return <AuthenticatedRouter />;
 }
 
 function App() {

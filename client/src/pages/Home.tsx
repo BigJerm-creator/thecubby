@@ -1,9 +1,10 @@
 import Layout from "@/components/layout";
-import { Package, AlertCircle, ShoppingCart, ChefHat, Book, CalendarDays, Coffee, Sun, Moon, Cookie } from "lucide-react";
+import { Package, AlertCircle, ShoppingCart, ChefHat, Book, CalendarDays, Coffee, Sun, Moon, Cookie, LogOut } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useInventory } from "@/lib/InventoryContext";
 import { useShoppingList } from "@/lib/ShoppingListContext";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/use-auth";
 import { format } from "date-fns";
 import type { MealPlan, Recipe } from "@shared/schema";
 
@@ -23,12 +24,15 @@ const mealTypeColors: Record<string, string> = {
 
 export default function Home() {
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
   const { getExpiredItems } = useInventory();
   const { items: shoppingItems } = useShoppingList();
   const expiredCount = getExpiredItems().length;
   const shoppingListCount = shoppingItems.filter(item => !item.checked).length;
 
   const today = format(new Date(), "yyyy-MM-dd");
+  
+  const displayName = user?.firstName || user?.email?.split("@")[0] || "Chef";
   
   const { data: todaysMeals = [] } = useQuery<MealPlan[]>({
     queryKey: ["/api/meal-plans", today],
@@ -55,12 +59,36 @@ export default function Home() {
   return (
     <Layout>
       <div className="space-y-8">
-        <header className="pt-6 text-center">
-          <span className="text-xs font-bold tracking-[0.2em] text-muted-foreground uppercase mb-2 block">The Cubby</span>
-          <h1 className="text-4xl font-serif text-foreground leading-tight">
-            Hello,<br />
-            <span className="text-primary">Chef.</span>
-          </h1>
+        <header className="pt-6">
+          <div className="flex items-center justify-between mb-4">
+            {user?.profileImageUrl ? (
+              <img 
+                src={user.profileImageUrl} 
+                alt="Profile" 
+                className="w-10 h-10 rounded-full object-cover border-2 border-primary/20"
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-primary font-semibold text-lg">
+                  {displayName.charAt(0).toUpperCase()}
+                </span>
+              </div>
+            )}
+            <a 
+              href="/api/logout" 
+              className="p-2 text-muted-foreground hover:text-foreground transition-colors"
+              data-testid="button-logout"
+            >
+              <LogOut size={20} />
+            </a>
+          </div>
+          <div className="text-center">
+            <span className="text-xs font-bold tracking-[0.2em] text-muted-foreground uppercase mb-2 block">The Cubby</span>
+            <h1 className="text-4xl font-serif text-foreground leading-tight">
+              Hello,<br />
+              <span className="text-primary">{displayName}.</span>
+            </h1>
+          </div>
         </header>
 
         {/* Quick Stats */}

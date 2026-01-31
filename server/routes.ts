@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertInventoryItemSchema, insertShoppingListItemSchema, insertUserProfileSchema, insertRecipeSchema, insertMealPlanSchema } from "@shared/schema";
-import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
+import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import OpenAI from "openai";
 import multer from "multer";
 import { createRequire } from 'module';
@@ -125,7 +125,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/inventory", async (req, res) => {
+  app.get("/api/inventory", isAuthenticated, async (req, res) => {
     try {
       const items = await storage.getInventoryItems();
       res.json(items);
@@ -135,7 +135,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/inventory/category/:category", async (req, res) => {
+  app.get("/api/inventory/category/:category", isAuthenticated, async (req, res) => {
     try {
       const items = await storage.getInventoryItemsByCategory(req.params.category);
       res.json(items);
@@ -145,7 +145,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/inventory/expired", async (req, res) => {
+  app.get("/api/inventory/expired", isAuthenticated, async (req, res) => {
     try {
       const items = await storage.getExpiredItems();
       res.json(items);
@@ -155,7 +155,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/inventory", async (req, res) => {
+  app.post("/api/inventory", isAuthenticated, async (req, res) => {
     try {
       const parsed = insertInventoryItemSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -169,7 +169,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/inventory/:id", async (req, res) => {
+  app.delete("/api/inventory/:id", isAuthenticated, async (req, res) => {
     try {
       await storage.deleteInventoryItem(parseInt(req.params.id));
       res.status(204).send();
@@ -179,7 +179,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/shopping-list", async (req, res) => {
+  app.get("/api/shopping-list", isAuthenticated, async (req, res) => {
     try {
       const items = await storage.getShoppingListItems();
       res.json(items);
@@ -189,7 +189,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/shopping-list", async (req, res) => {
+  app.post("/api/shopping-list", isAuthenticated, async (req, res) => {
     try {
       const parsed = insertShoppingListItemSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -203,7 +203,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/shopping-list/:id", async (req, res) => {
+  app.patch("/api/shopping-list/:id", isAuthenticated, async (req, res) => {
     try {
       const { checked } = req.body;
       const item = await storage.updateShoppingListItem(parseInt(req.params.id), checked);
@@ -217,7 +217,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/shopping-list/:id", async (req, res) => {
+  app.delete("/api/shopping-list/:id", isAuthenticated, async (req, res) => {
     try {
       await storage.deleteShoppingListItem(parseInt(req.params.id));
       res.status(204).send();
@@ -227,7 +227,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/profile", async (req, res) => {
+  app.get("/api/profile", isAuthenticated, async (req, res) => {
     try {
       const profile = await storage.getUserProfile();
       res.json(profile || null);
@@ -237,7 +237,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/profile", async (req, res) => {
+  app.post("/api/profile", isAuthenticated, async (req, res) => {
     try {
       const parsed = insertUserProfileSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -251,7 +251,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/generate-recipe", async (req, res) => {
+  app.post("/api/generate-recipe", isAuthenticated, async (req, res) => {
     try {
       const items = await storage.getInventoryItems();
       const profile = await storage.getUserProfile();
@@ -318,7 +318,7 @@ export async function registerRoutes(
   });
 
   // Recipe Book routes
-  app.get("/api/recipes", async (req, res) => {
+  app.get("/api/recipes", isAuthenticated, async (req, res) => {
     try {
       const recipes = await storage.getRecipes();
       res.json(recipes);
@@ -328,7 +328,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/recipes/:id", async (req, res) => {
+  app.get("/api/recipes/:id", isAuthenticated, async (req, res) => {
     try {
       const recipe = await storage.getRecipe(parseInt(req.params.id));
       if (!recipe) {
@@ -341,7 +341,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/recipes", async (req, res) => {
+  app.post("/api/recipes", isAuthenticated, async (req, res) => {
     try {
       const parsed = insertRecipeSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -355,7 +355,7 @@ export async function registerRoutes(
     }
   });
 
-  app.patch("/api/recipes/:id", async (req, res) => {
+  app.patch("/api/recipes/:id", isAuthenticated, async (req, res) => {
     try {
       const recipe = await storage.updateRecipe(parseInt(req.params.id), req.body);
       if (!recipe) {
@@ -368,7 +368,7 @@ export async function registerRoutes(
     }
   });
 
-  app.delete("/api/recipes/:id", async (req, res) => {
+  app.delete("/api/recipes/:id", isAuthenticated, async (req, res) => {
     try {
       await storage.deleteRecipe(parseInt(req.params.id));
       res.status(204).send();
@@ -379,7 +379,7 @@ export async function registerRoutes(
   });
 
   // Image to Recipe conversion (multiple images = single recipe)
-  app.post("/api/recipes/parse-image", upload.array("images", 10), async (req, res) => {
+  app.post("/api/recipes/parse-image", isAuthenticated, upload.array("images", 10), async (req, res) => {
     try {
       const files = req.files as Express.Multer.File[];
       if (!files || files.length === 0) {
@@ -452,7 +452,7 @@ Only return the JSON object, no additional text or markdown. If you cannot read 
   });
 
   // PDF to Recipe conversion
-  app.post("/api/recipes/parse-pdf", upload.single("pdf"), async (req, res) => {
+  app.post("/api/recipes/parse-pdf", isAuthenticated, upload.single("pdf"), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: "No PDF file uploaded" });
@@ -509,7 +509,7 @@ Only return the JSON object, no additional text or markdown.`
   });
 
   // Meal Plan routes
-  app.get("/api/meal-plans", async (req, res) => {
+  app.get("/api/meal-plans", isAuthenticated, async (req, res) => {
     try {
       const { startDate, endDate, date } = req.query;
       let plans;
@@ -527,7 +527,7 @@ Only return the JSON object, no additional text or markdown.`
     }
   });
 
-  app.post("/api/meal-plans", async (req, res) => {
+  app.post("/api/meal-plans", isAuthenticated, async (req, res) => {
     try {
       const parsed = insertMealPlanSchema.safeParse(req.body);
       if (!parsed.success) {
@@ -541,7 +541,7 @@ Only return the JSON object, no additional text or markdown.`
     }
   });
 
-  app.patch("/api/meal-plans/:id", async (req, res) => {
+  app.patch("/api/meal-plans/:id", isAuthenticated, async (req, res) => {
     try {
       const mealPlan = await storage.updateMealPlan(parseInt(req.params.id), req.body);
       if (!mealPlan) {
@@ -554,7 +554,7 @@ Only return the JSON object, no additional text or markdown.`
     }
   });
 
-  app.delete("/api/meal-plans/:id", async (req, res) => {
+  app.delete("/api/meal-plans/:id", isAuthenticated, async (req, res) => {
     try {
       await storage.deleteMealPlan(parseInt(req.params.id));
       res.status(204).send();
