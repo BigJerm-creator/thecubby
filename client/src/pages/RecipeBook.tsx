@@ -159,18 +159,25 @@ export default function RecipeBook() {
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    if (!file.type.startsWith("image/")) {
-      toast({ title: "Please upload an image file", variant: "destructive" });
-      return;
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith("image/")) {
+        toast({ title: `${file.name} is not an image file`, variant: "destructive" });
+        continue;
+      }
     }
 
     setIsUploading(true);
     setUploadType("image");
     const formDataObj = new FormData();
-    formDataObj.append("image", file);
+    
+    for (const file of Array.from(files)) {
+      if (file.type.startsWith("image/")) {
+        formDataObj.append("images", file);
+      }
+    }
 
     try {
       const res = await fetch("/api/recipes/parse-image", {
@@ -180,26 +187,62 @@ export default function RecipeBook() {
 
       if (!res.ok) {
         const error = await res.json();
-        throw new Error(error.error || "Failed to parse image");
+        throw new Error(error.error || "Failed to parse images");
       }
 
-      const recipeData = await res.json();
+      const data = await res.json();
+      const recipes = data.recipes || [];
       
-      setFormData({
-        title: recipeData.title || "",
-        description: recipeData.description || "",
-        ingredients: (recipeData.ingredients || []).join("\n"),
-        instructions: recipeData.instructions || "",
-        prepTime: recipeData.prepTime || "",
-        cookTime: recipeData.cookTime || "",
-        servings: recipeData.servings || "",
-        category: recipeData.category || "dinner",
-      });
-      setShowAddForm(true);
-      toast({ title: "Recipe extracted from image! Review and save." });
+      if (recipes.length === 1) {
+        setFormData({
+          title: recipes[0].title || "",
+          description: recipes[0].description || "",
+          ingredients: (recipes[0].ingredients || []).join("\n"),
+          instructions: recipes[0].instructions || "",
+          prepTime: recipes[0].prepTime || "",
+          cookTime: recipes[0].cookTime || "",
+          servings: recipes[0].servings || "",
+          category: recipes[0].category || "dinner",
+        });
+        setShowAddForm(true);
+        toast({ title: "Recipe extracted! Review and save." });
+      } else if (recipes.length > 1) {
+        let savedCount = 0;
+        for (const recipe of recipes) {
+          try {
+            await fetch("/api/recipes", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                title: recipe.title || "Untitled Recipe",
+                description: recipe.description || "",
+                ingredients: recipe.ingredients || [],
+                instructions: recipe.instructions || "",
+                prepTime: recipe.prepTime || "",
+                cookTime: recipe.cookTime || "",
+                servings: recipe.servings || "",
+                category: recipe.category || "dinner",
+                source: "Image Upload",
+              }),
+            });
+            savedCount++;
+          } catch (err) {
+            console.error("Failed to save recipe:", recipe.title);
+          }
+        }
+        queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
+        toast({ title: `${savedCount} recipes extracted and saved!` });
+      }
+
+      if (data.errors && data.errors.length > 0) {
+        toast({ 
+          title: `Could not process: ${data.errors.join(", ")}`, 
+          variant: "destructive" 
+        });
+      }
     } catch (error) {
       toast({
-        title: error instanceof Error ? error.message : "Failed to parse image",
+        title: error instanceof Error ? error.message : "Failed to parse images",
         variant: "destructive",
       });
     } finally {
@@ -451,7 +494,7 @@ export default function RecipeBook() {
               ) : (
                 <Camera size={18} className="mr-2" />
               )}
-              {isUploading && uploadType === "image" ? "Processing..." : "Upload Image"}
+              {isUploading && uploadType === "image" ? "Processing..." : "Upload Images"}
             </Button>
           </div>
           <input
@@ -465,6 +508,7 @@ export default function RecipeBook() {
             ref={imageInputRef}
             type="file"
             accept="image/*"
+            multiple
             onChange={handleImageUpload}
             className="hidden"
           />

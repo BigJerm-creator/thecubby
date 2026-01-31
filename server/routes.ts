@@ -373,22 +373,28 @@ export async function registerRoutes(
     }
   });
 
-  // Image to Recipe conversion
-  app.post("/api/recipes/parse-image", upload.single("image"), async (req, res) => {
+  // Image to Recipe conversion (supports multiple images)
+  app.post("/api/recipes/parse-image", upload.array("images", 10), async (req, res) => {
     try {
-      if (!req.file) {
-        return res.status(400).json({ error: "No image file uploaded" });
+      const files = req.files as Express.Multer.File[];
+      if (!files || files.length === 0) {
+        return res.status(400).json({ error: "No image files uploaded" });
       }
 
-      const base64Image = req.file.buffer.toString("base64");
-      const mimeType = req.file.mimetype || "image/jpeg";
+      const results: any[] = [];
+      const errors: string[] = [];
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: `You are a recipe extraction assistant. Extract recipe information from the provided image and return it as valid JSON with the following structure:
+      for (const file of files) {
+        try {
+          const base64Image = file.buffer.toString("base64");
+          const mimeType = file.mimetype || "image/jpeg";
+
+          const response = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: [
+              {
+                role: "system",
+                content: `You are a recipe extraction assistant. Extract recipe information from the provided image and return it as valid JSON with the following structure:
 {
   "title": "Recipe Name",
   "description": "Brief description of the dish",
@@ -400,40 +406,45 @@ export async function registerRoutes(
   "category": "one of: breakfast, lunch, dinner, dessert, snack, appetizer, beverage, other"
 }
 Only return the JSON object, no additional text or markdown. If you cannot read all the text clearly, do your best to extract what you can see.`
-          },
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: "Please extract the recipe information from this image:"
               },
               {
-                type: "image_url",
-                image_url: {
-                  url: `data:${mimeType};base64,${base64Image}`
-                }
+                role: "user",
+                content: [
+                  {
+                    type: "text",
+                    text: "Please extract the recipe information from this image:"
+                  },
+                  {
+                    type: "image_url",
+                    image_url: {
+                      url: `data:${mimeType};base64,${base64Image}`
+                    }
+                  }
+                ]
               }
-            ]
-          }
-        ],
-        max_tokens: 2000,
-      });
+            ],
+            max_tokens: 2000,
+          });
 
-      const content = response.choices[0]?.message?.content || "";
-      
-      try {
-        const cleanedContent = content.replace(/```json\n?|\n?```/g, "").trim();
-        const recipeData = JSON.parse(cleanedContent);
-        recipeData.source = "Image Upload";
-        res.json(recipeData);
-      } catch (parseError) {
-        console.error("Failed to parse AI response:", content);
-        res.status(500).json({ error: "Failed to parse recipe from image" });
+          const content = response.choices[0]?.message?.content || "";
+          const cleanedContent = content.replace(/```json\n?|\n?```/g, "").trim();
+          const recipeData = JSON.parse(cleanedContent);
+          recipeData.source = "Image Upload";
+          results.push(recipeData);
+        } catch (fileError) {
+          console.error("Error processing image:", file.originalname, fileError);
+          errors.push(file.originalname || "unknown");
+        }
       }
+
+      if (results.length === 0) {
+        return res.status(500).json({ error: "Failed to parse any recipes from images" });
+      }
+
+      res.json({ recipes: results, errors: errors.length > 0 ? errors : undefined });
     } catch (error) {
-      console.error("Error parsing image:", error);
-      res.status(500).json({ error: "Failed to process image" });
+      console.error("Error parsing images:", error);
+      res.status(500).json({ error: "Failed to process images" });
     }
   });
 
