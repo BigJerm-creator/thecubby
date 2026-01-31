@@ -45,6 +45,7 @@ Preferred communication style: Simple, everyday language.
 - `POST /api/generate-recipe` - AI recipe generation with streaming
 - `GET/POST/PATCH/DELETE /api/recipes` - Recipe Book CRUD operations
 - `POST /api/recipes/parse-pdf` - Upload PDF and extract recipe using AI
+- `POST /api/recipes/parse-image` - Upload image and extract recipe using AI vision
 
 ### Feature Modules
 - **Barcode Scanning**: ZXing library for camera-based barcode detection

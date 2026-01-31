@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import Layout from "@/components/layout";
-import { Book, Plus, Upload, Heart, Clock, Users, Trash2, ChevronRight, X, Loader2 } from "lucide-react";
+import { Book, Plus, Upload, Heart, Clock, Users, Trash2, ChevronRight, X, Loader2, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,9 +12,11 @@ export default function RecipeBook() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadType, setUploadType] = useState<"pdf" | "image" | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -115,6 +117,7 @@ export default function RecipeBook() {
     }
 
     setIsUploading(true);
+    setUploadType("pdf");
     const formData = new FormData();
     formData.append("pdf", file);
 
@@ -150,7 +153,59 @@ export default function RecipeBook() {
       });
     } finally {
       setIsUploading(false);
+      setUploadType(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Please upload an image file", variant: "destructive" });
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadType("image");
+    const formDataObj = new FormData();
+    formDataObj.append("image", file);
+
+    try {
+      const res = await fetch("/api/recipes/parse-image", {
+        method: "POST",
+        body: formDataObj,
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to parse image");
+      }
+
+      const recipeData = await res.json();
+      
+      setFormData({
+        title: recipeData.title || "",
+        description: recipeData.description || "",
+        ingredients: (recipeData.ingredients || []).join("\n"),
+        instructions: recipeData.instructions || "",
+        prepTime: recipeData.prepTime || "",
+        cookTime: recipeData.cookTime || "",
+        servings: recipeData.servings || "",
+        category: recipeData.category || "dinner",
+      });
+      setShowAddForm(true);
+      toast({ title: "Recipe extracted from image! Review and save." });
+    } catch (error) {
+      toast({
+        title: error instanceof Error ? error.message : "Failed to parse image",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+      setUploadType(null);
+      if (imageInputRef.current) imageInputRef.current.value = "";
     }
   };
 
@@ -364,30 +419,53 @@ export default function RecipeBook() {
           <p className="text-sm text-muted-foreground">Your saved recipes and favorites</p>
         </header>
 
-        <div className="flex gap-3 mb-6">
-          <Button onClick={() => setShowAddForm(true)} className="flex-1" data-testid="button-add-recipe">
+        <div className="space-y-3 mb-6">
+          <Button onClick={() => setShowAddForm(true)} className="w-full" data-testid="button-add-recipe">
             <Plus size={18} className="mr-2" />
-            Add Recipe
+            Add Recipe Manually
           </Button>
-          <Button
-            variant="outline"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading}
-            className="flex-1"
-            data-testid="button-upload-pdf"
-          >
-            {isUploading ? (
-              <Loader2 size={18} className="mr-2 animate-spin" />
-            ) : (
-              <Upload size={18} className="mr-2" />
-            )}
-            {isUploading ? "Processing..." : "Upload PDF"}
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              className="flex-1"
+              data-testid="button-upload-pdf"
+            >
+              {isUploading && uploadType === "pdf" ? (
+                <Loader2 size={18} className="mr-2 animate-spin" />
+              ) : (
+                <Upload size={18} className="mr-2" />
+              )}
+              {isUploading && uploadType === "pdf" ? "Processing..." : "Upload PDF"}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => imageInputRef.current?.click()}
+              disabled={isUploading}
+              className="flex-1"
+              data-testid="button-upload-image"
+            >
+              {isUploading && uploadType === "image" ? (
+                <Loader2 size={18} className="mr-2 animate-spin" />
+              ) : (
+                <Camera size={18} className="mr-2" />
+              )}
+              {isUploading && uploadType === "image" ? "Processing..." : "Upload Image"}
+            </Button>
+          </div>
           <input
             ref={fileInputRef}
             type="file"
             accept=".pdf"
             onChange={handlePdfUpload}
+            className="hidden"
+          />
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
             className="hidden"
           />
         </div>
@@ -400,7 +478,7 @@ export default function RecipeBook() {
           <div className="text-center py-12">
             <Book className="mx-auto text-muted-foreground mb-4" size={48} />
             <h3 className="text-lg font-medium text-foreground mb-2">No recipes yet</h3>
-            <p className="text-sm text-muted-foreground mb-4">Add your first recipe manually or upload a PDF</p>
+            <p className="text-sm text-muted-foreground mb-4">Add your first recipe manually or upload a PDF/image</p>
           </div>
         ) : (
           <div className="space-y-3">
