@@ -2,14 +2,18 @@ import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, ChefHat, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, ChefHat, Loader2, Sparkles, BookPlus, Check } from "lucide-react";
 import { useInventory } from "@/lib/InventoryContext";
+import { useToast } from "@/hooks/use-toast";
 
 export default function RecipeGenerator() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const { inventory, isLoading: inventoryLoading } = useInventory();
   const [recipe, setRecipe] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const recipeRef = useRef<HTMLDivElement>(null);
 
@@ -25,6 +29,7 @@ export default function RecipeGenerator() {
     setIsGenerating(true);
     setRecipe("");
     setError(null);
+    setIsSaved(false);
 
     try {
       const response = await fetch("/api/generate-recipe", {
@@ -72,6 +77,65 @@ export default function RecipeGenerator() {
       setError(err instanceof Error ? err.message : "Failed to generate recipe");
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const saveToRecipeBook = async () => {
+    if (!recipe || isSaving) return;
+    
+    setIsSaving(true);
+    try {
+      const lines = recipe.split('\n');
+      let title = "Generated Recipe";
+      const ingredients: string[] = [];
+      let instructions = "";
+      let inIngredients = false;
+      let inInstructions = false;
+      
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.match(/^#+ /) || (trimmed.startsWith('**') && trimmed.endsWith('**'))) {
+          const heading = trimmed.replace(/^#+\s*/, '').replace(/^\*\*|\*\*$/g, '').toLowerCase();
+          if (heading.includes('recipe name') || lines.indexOf(line) === 0) {
+            title = trimmed.replace(/^#+\s*/, '').replace(/^\*\*|\*\*$/g, '');
+          }
+          inIngredients = heading.includes('ingredient');
+          inInstructions = heading.includes('instruction') || heading.includes('step') || heading.includes('direction');
+          continue;
+        }
+        
+        if (inIngredients && (trimmed.startsWith('-') || trimmed.startsWith('•') || trimmed.match(/^\d/))) {
+          ingredients.push(trimmed.replace(/^[-•]\s*/, ''));
+        }
+        if (inInstructions && trimmed) {
+          instructions += trimmed + '\n';
+        }
+      }
+      
+      const res = await fetch("/api/recipes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title || "Generated Recipe",
+          description: "AI-generated recipe from pantry ingredients",
+          ingredients: ingredients.length > 0 ? ingredients : [recipe.substring(0, 500)],
+          instructions: instructions || recipe,
+          source: "AI Generated",
+          category: "dinner",
+        }),
+      });
+      
+      if (!res.ok) throw new Error("Failed to save recipe");
+      
+      setIsSaved(true);
+      toast({ title: "Recipe saved to your Recipe Book!" });
+    } catch (err) {
+      toast({ 
+        title: "Failed to save recipe", 
+        variant: "destructive" 
+      });
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -176,6 +240,32 @@ export default function RecipeGenerator() {
                   <Loader2 className="h-4 w-4 animate-spin" />
                   <span className="text-sm">Writing recipe...</span>
                 </div>
+              )}
+              {!isGenerating && (
+                <Button
+                  onClick={saveToRecipeBook}
+                  disabled={isSaving || isSaved}
+                  variant={isSaved ? "outline" : "default"}
+                  className="w-full mt-6 gap-2"
+                  data-testid="button-save-to-recipe-book"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : isSaved ? (
+                    <>
+                      <Check className="h-4 w-4" />
+                      Saved to Recipe Book
+                    </>
+                  ) : (
+                    <>
+                      <BookPlus className="h-4 w-4" />
+                      Save to Recipe Book
+                    </>
+                  )}
+                </Button>
               )}
             </CardContent>
           </Card>
