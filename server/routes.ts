@@ -1,8 +1,12 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertInventoryItemSchema, insertShoppingListItemSchema, insertUserProfileSchema } from "@shared/schema";
+import { insertInventoryItemSchema, insertShoppingListItemSchema, insertUserProfileSchema, insertRecipeSchema } from "@shared/schema";
 import OpenAI from "openai";
+import multer from "multer";
+import pdfParse from "pdf-parse";
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
@@ -299,6 +303,124 @@ export async function registerRoutes(
       } else {
         res.status(500).json({ error: "Failed to generate recipe" });
       }
+    }
+  });
+
+  // Recipe Book routes
+  app.get("/api/recipes", async (req, res) => {
+    try {
+      const recipes = await storage.getRecipes();
+      res.json(recipes);
+    } catch (error) {
+      console.error("Error fetching recipes:", error);
+      res.status(500).json({ error: "Failed to fetch recipes" });
+    }
+  });
+
+  app.get("/api/recipes/:id", async (req, res) => {
+    try {
+      const recipe = await storage.getRecipe(parseInt(req.params.id));
+      if (!recipe) {
+        return res.status(404).json({ error: "Recipe not found" });
+      }
+      res.json(recipe);
+    } catch (error) {
+      console.error("Error fetching recipe:", error);
+      res.status(500).json({ error: "Failed to fetch recipe" });
+    }
+  });
+
+  app.post("/api/recipes", async (req, res) => {
+    try {
+      const parsed = insertRecipeSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.message });
+      }
+      const recipe = await storage.createRecipe(parsed.data);
+      res.status(201).json(recipe);
+    } catch (error) {
+      console.error("Error creating recipe:", error);
+      res.status(500).json({ error: "Failed to create recipe" });
+    }
+  });
+
+  app.patch("/api/recipes/:id", async (req, res) => {
+    try {
+      const recipe = await storage.updateRecipe(parseInt(req.params.id), req.body);
+      if (!recipe) {
+        return res.status(404).json({ error: "Recipe not found" });
+      }
+      res.json(recipe);
+    } catch (error) {
+      console.error("Error updating recipe:", error);
+      res.status(500).json({ error: "Failed to update recipe" });
+    }
+  });
+
+  app.delete("/api/recipes/:id", async (req, res) => {
+    try {
+      await storage.deleteRecipe(parseInt(req.params.id));
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting recipe:", error);
+      res.status(500).json({ error: "Failed to delete recipe" });
+    }
+  });
+
+  // PDF to Recipe conversion
+  app.post("/api/recipes/parse-pdf", upload.single("pdf"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No PDF file uploaded" });
+      }
+
+      const pdfData = await pdfParse(req.file.buffer);
+      const pdfText = pdfData.text;
+
+      if (!pdfText || pdfText.trim().length < 50) {
+        return res.status(400).json({ error: "Could not extract enough text from PDF" });
+      }
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are a recipe extraction assistant. Extract recipe information from the provided text and return it as valid JSON with the following structure:
+{
+  "title": "Recipe Name",
+  "description": "Brief description of the dish",
+  "ingredients": ["ingredient 1", "ingredient 2", ...],
+  "instructions": "Step-by-step cooking instructions",
+  "prepTime": "prep time (e.g., '15 mins')",
+  "cookTime": "cook time (e.g., '30 mins')",
+  "servings": "number of servings (e.g., '4 servings')",
+  "category": "one of: breakfast, lunch, dinner, dessert, snack, appetizer, beverage, other"
+}
+Only return the JSON object, no additional text or markdown.`
+          },
+          {
+            role: "user",
+            content: `Extract the recipe from this text:\n\n${pdfText.substring(0, 8000)}`
+          }
+        ],
+        max_tokens: 2000,
+      });
+
+      const content = response.choices[0]?.message?.content || "";
+      
+      try {
+        const cleanedContent = content.replace(/```json\n?|\n?```/g, "").trim();
+        const recipeData = JSON.parse(cleanedContent);
+        recipeData.source = "PDF Upload";
+        res.json(recipeData);
+      } catch (parseError) {
+        console.error("Failed to parse AI response:", content);
+        res.status(500).json({ error: "Failed to parse recipe from PDF" });
+      }
+    } catch (error) {
+      console.error("Error parsing PDF:", error);
+      res.status(500).json({ error: "Failed to process PDF" });
     }
   });
 
