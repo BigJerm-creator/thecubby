@@ -1,9 +1,12 @@
 import Layout from "@/components/layout";
 import { KITCHEN_CATEGORIES } from "@/lib/mockData";
 import { Link } from "wouter";
-import { ArrowRight, Leaf, Snowflake, Milk, Package, Weight, Archive } from "lucide-react";
+import { ArrowRight, Leaf, Snowflake, Milk, Package, Weight, Archive, Wine, Droplets, Salad, Beef, Fish, Croissant, Baby, PawPrint } from "lucide-react";
 import { motion } from "framer-motion";
 import { useInventory } from "@/lib/InventoryContext";
+import { useTheme } from "@/lib/ThemeContext";
+import { getIconStyleConfig } from "@/components/StyledIcon";
+import { cn } from "@/lib/utils";
 
 const container = {
   hidden: { opacity: 0 },
@@ -22,6 +25,8 @@ const item = {
 
 export default function Kitchen() {
   const { inventory } = useInventory();
+  const { iconStyle } = useTheme();
+  const styleConfig = getIconStyleConfig(iconStyle);
 
   const getCategoryCount = (categoryId: string) => {
     return inventory[categoryId]?.length || 0;
@@ -35,6 +40,14 @@ export default function Kitchen() {
       case 'canned': return Archive;
       case 'boxed': return Package;
       case 'bulk': return Weight;
+      case 'beverages': return Wine;
+      case 'condiments': return Droplets;
+      case 'produce': return Salad;
+      case 'meat': return Beef;
+      case 'seafood': return Fish;
+      case 'bakery': return Croissant;
+      case 'baby': return Baby;
+      case 'pet': return PawPrint;
       default: return Package;
     }
   };
@@ -63,8 +76,8 @@ export default function Kitchen() {
                 >
                   <div className="flex items-center justify-between z-10 relative">
                     <div className="flex items-center gap-4">
-                      <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                        <Icon size={22} strokeWidth={1.5} />
+                      <div className={cn("h-12 w-12 bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors", styleConfig.containerClass)}>
+                        <Icon size={22} strokeWidth={styleConfig.strokeWidth} />
                       </div>
                       <div>
                         <h3 className="font-serif text-lg text-foreground font-medium group-hover:text-primary transition-colors">{category.name}</h3>

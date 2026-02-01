@@ -7,6 +7,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { format } from "date-fns";
 import type { MealPlan, Recipe } from "@shared/schema";
+import { useTheme } from "@/lib/ThemeContext";
+import { getIconStyleConfig } from "@/components/StyledIcon";
+import { cn } from "@/lib/utils";
 
 const mealTypeIcons: Record<string, any> = {
   breakfast: Coffee,
@@ -27,6 +30,8 @@ export default function Home() {
   const { user } = useAuth();
   const { getExpiredItems } = useInventory();
   const { items: shoppingItems } = useShoppingList();
+  const { iconStyle } = useTheme();
+  const styleConfig = getIconStyleConfig(iconStyle);
   const expiredCount = getExpiredItems().length;
   const shoppingListCount = shoppingItems.filter(item => !item.checked).length;
 
@@ -95,22 +100,22 @@ export default function Home() {
         <div className="grid grid-cols-2 gap-4">
           <button
             onClick={() => setLocation("/shopping-list")}
-            className="bg-blue-50 p-4 rounded-2xl border border-blue-100 hover:border-blue-200 transition-colors text-left"
+            className={cn("bg-blue-50 p-4 border border-blue-100 hover:border-blue-200 transition-colors text-left", styleConfig.containerClass)}
             data-testid="button-shopping-list"
           >
             <div className="flex items-start justify-between mb-2">
-              <ShoppingCart className="text-blue-600" size={24} />
+              <ShoppingCart className="text-blue-600" size={24} strokeWidth={styleConfig.strokeWidth} />
               <span className="text-2xl font-serif font-bold text-foreground">{shoppingListCount}</span>
             </div>
             <p className="text-xs text-blue-700 font-medium">Shopping List</p>
           </button>
           <button
             onClick={() => setLocation("/expired")}
-            className="bg-amber-50 p-4 rounded-2xl border border-amber-100 hover:border-amber-200 transition-colors text-left w-full"
+            className={cn("bg-amber-50 p-4 border border-amber-100 hover:border-amber-200 transition-colors text-left w-full", styleConfig.containerClass)}
             data-testid="button-expired-items"
           >
             <div className="flex items-start justify-between mb-2">
-              <AlertCircle className="text-amber-600" size={24} />
+              <AlertCircle className="text-amber-600" size={24} strokeWidth={styleConfig.strokeWidth} />
               <span className="text-2xl font-serif font-bold text-foreground">{expiredCount}</span>
             </div>
             <p className="text-xs text-amber-700 font-medium">Expired Items</p>
@@ -121,11 +126,11 @@ export default function Home() {
         <div className="space-y-3">
           <button
             onClick={() => setLocation("/recipes")}
-            className="w-full bg-card/95 backdrop-blur-sm p-4 rounded-2xl border border-primary/30 hover:border-primary/50 transition-colors text-left flex items-center gap-4 shadow-sm"
+            className={cn("w-full bg-card/95 backdrop-blur-sm p-4 border border-primary/30 hover:border-primary/50 transition-colors text-left flex items-center gap-4 shadow-sm", styleConfig.containerClass)}
             data-testid="button-recipe-generator"
           >
-            <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
-              <ChefHat className="text-primary" size={24} />
+            <div className={cn("h-12 w-12 bg-primary/20 flex items-center justify-center", styleConfig.containerClass)}>
+              <ChefHat className="text-primary" size={24} strokeWidth={styleConfig.strokeWidth} />
             </div>
             <div>
               <h3 className="font-serif font-medium text-foreground">Recipe Generator</h3>
@@ -135,11 +140,11 @@ export default function Home() {
 
           <button
             onClick={() => setLocation("/recipe-book")}
-            className="w-full bg-card/95 backdrop-blur-sm p-4 rounded-2xl border border-amber-500/30 hover:border-amber-500/50 transition-colors text-left flex items-center gap-4 shadow-sm"
+            className={cn("w-full bg-card/95 backdrop-blur-sm p-4 border border-amber-500/30 hover:border-amber-500/50 transition-colors text-left flex items-center gap-4 shadow-sm", styleConfig.containerClass)}
             data-testid="button-recipe-book"
           >
-            <div className="h-12 w-12 rounded-full bg-amber-500/20 flex items-center justify-center">
-              <Book className="text-amber-600" size={24} />
+            <div className={cn("h-12 w-12 bg-amber-500/20 flex items-center justify-center", styleConfig.containerClass)}>
+              <Book className="text-amber-600" size={24} strokeWidth={styleConfig.strokeWidth} />
             </div>
             <div>
               <h3 className="font-serif font-medium text-foreground">Recipe Book</h3>
@@ -149,11 +154,11 @@ export default function Home() {
 
           <button
             onClick={() => setLocation("/meal-plan")}
-            className="w-full bg-card/95 backdrop-blur-sm p-4 rounded-2xl border border-violet-500/30 hover:border-violet-500/50 transition-colors text-left flex items-center gap-4 shadow-sm"
+            className={cn("w-full bg-card/95 backdrop-blur-sm p-4 border border-violet-500/30 hover:border-violet-500/50 transition-colors text-left flex items-center gap-4 shadow-sm", styleConfig.containerClass)}
             data-testid="button-meal-plan"
           >
-            <div className="h-12 w-12 rounded-full bg-violet-500/20 flex items-center justify-center">
-              <CalendarDays className="text-violet-600" size={24} />
+            <div className={cn("h-12 w-12 bg-violet-500/20 flex items-center justify-center", styleConfig.containerClass)}>
+              <CalendarDays className="text-violet-600" size={24} strokeWidth={styleConfig.strokeWidth} />
             </div>
             <div>
               <h3 className="font-serif font-medium text-foreground">Meal Plan</h3>

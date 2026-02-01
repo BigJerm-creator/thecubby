@@ -2,9 +2,13 @@ import React from 'react';
 import { useLocation, Link } from "wouter";
 import { Home, Search, ScanLine, Settings, UtensilsCrossed } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/lib/ThemeContext";
+import { getIconStyleConfig } from "./StyledIcon";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
+  const { iconStyle } = useTheme();
+  const styleConfig = getIconStyleConfig(iconStyle);
 
   const navItems = [
     { icon: Home, label: "Home", path: "/" },
@@ -38,9 +42,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                return (
                 <Link key={item.path} href={item.path}>
                   <div className="relative -top-5 group cursor-pointer">
-                    <div className="absolute inset-0 bg-primary/20 rounded-full blur-md group-hover:bg-primary/30 transition-all" />
-                    <div className="bg-primary text-primary-foreground h-14 w-14 rounded-full flex items-center justify-center shadow-lg transform transition-transform group-active:scale-95 border-4 border-background">
-                      <Icon size={24} />
+                    <div className={cn("absolute inset-0 bg-primary/20 blur-md group-hover:bg-primary/30 transition-all", styleConfig.containerClass)} />
+                    <div className={cn("bg-primary text-primary-foreground h-14 w-14 flex items-center justify-center shadow-lg transform transition-transform group-active:scale-95 border-4 border-background", styleConfig.containerClass)}>
+                      <Icon size={24} strokeWidth={styleConfig.strokeWidth} />
                     </div>
                   </div>
                 </Link>
@@ -50,10 +54,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             return (
               <Link key={item.path} href={item.path}>
                 <div className={cn(
-                  "flex flex-col items-center gap-1 p-2 rounded-lg transition-colors cursor-pointer",
+                  "flex flex-col items-center gap-1 p-2 transition-colors cursor-pointer",
+                  styleConfig.containerClass,
                   isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
                 )}>
-                  <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+                  <Icon size={22} strokeWidth={isActive ? styleConfig.strokeWidth + 0.5 : styleConfig.strokeWidth} />
                   <span className="text-[10px] font-medium">{item.label}</span>
                 </div>
               </Link>
