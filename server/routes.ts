@@ -64,61 +64,131 @@ export async function registerRoutes(
   app.get("/api/upc/:barcode", async (req, res) => {
     const { barcode } = req.params;
     
+    // Helper to extract nutrition data from Open Food Facts
+    const extractNutrition = (nutriments: any) => {
+      const nutritionData: Record<string, string | number | null> = {};
+      if (nutriments['energy-kcal_100g']) nutritionData.calories = nutriments['energy-kcal_100g'];
+      if (nutriments.proteins_100g) nutritionData.protein = nutriments.proteins_100g;
+      if (nutriments.carbohydrates_100g) nutritionData.carbs = nutriments.carbohydrates_100g;
+      if (nutriments.fat_100g) nutritionData.fat = nutriments.fat_100g;
+      if (nutriments.fiber_100g) nutritionData.fiber = nutriments.fiber_100g;
+      if (nutriments.sugars_100g) nutritionData.sugar = nutriments.sugars_100g;
+      if (nutriments.sodium_100g) nutritionData.sodium = nutriments.sodium_100g;
+      return Object.keys(nutritionData).length > 0 ? nutritionData : null;
+    };
+
+    // Helper to format Open Food Facts response
+    const formatOpenFoodFactsResponse = (product: any, source: string) => ({
+      found: true,
+      name: product.product_name || product.product_name_en || product.generic_name || null,
+      brand: product.brands || null,
+      category: guessCategory(product.categories_tags || product.categories?.split(',') || []),
+      quantity: product.quantity || product.product_quantity || null,
+      imageUrl: product.image_front_url || product.image_url || product.image_front_small_url || null,
+      ingredients: product.ingredients_text || product.ingredients_text_en || null,
+      allergens: product.allergens_tags?.map((a: string) => a.replace('en:', '')) || [],
+      nutrition: extractNutrition(product.nutriments || {}),
+      servingSize: product.serving_size || null,
+      nutriscore: product.nutriscore_grade || null,
+      novaGroup: product.nova_group || null,
+      countries: product.countries || null,
+      source,
+    });
+
     try {
-      const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
-      const data = await response.json();
-      
-      if (data.status === 1 && data.product) {
-        const product = data.product;
-        
-        const nutriments = product.nutriments || {};
-        const nutritionData: Record<string, string | number | null> = {};
-        if (nutriments['energy-kcal_100g']) nutritionData.calories = nutriments['energy-kcal_100g'];
-        if (nutriments.proteins_100g) nutritionData.protein = nutriments.proteins_100g;
-        if (nutriments.carbohydrates_100g) nutritionData.carbs = nutriments.carbohydrates_100g;
-        if (nutriments.fat_100g) nutritionData.fat = nutriments.fat_100g;
-        if (nutriments.fiber_100g) nutritionData.fiber = nutriments.fiber_100g;
-        if (nutriments.sugars_100g) nutritionData.sugar = nutriments.sugars_100g;
-        if (nutriments.sodium_100g) nutritionData.sodium = nutriments.sodium_100g;
-        
-        res.json({
-          found: true,
-          name: product.product_name || product.generic_name || null,
-          brand: product.brands || null,
-          category: guessCategory(product.categories_tags || []),
-          quantity: product.quantity || null,
-          imageUrl: product.image_front_url || product.image_url || null,
-          ingredients: product.ingredients_text || null,
-          allergens: product.allergens_tags?.map((a: string) => a.replace('en:', '')) || [],
-          nutrition: Object.keys(nutritionData).length > 0 ? nutritionData : null,
-          servingSize: product.serving_size || null,
-          nutriscore: product.nutriscore_grade || null,
-          novaGroup: product.nova_group || null,
-          countries: product.countries || null,
-          source: 'openfoodfacts',
-        });
-      } else {
-        const upcResponse = await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${barcode}`);
-        const upcData = await upcResponse.json();
-        
-        if (upcData.items && upcData.items.length > 0) {
-          const item = upcData.items[0];
-          res.json({
-            found: true,
-            name: item.title || null,
-            brand: item.brand || null,
-            category: guessCategory(item.category ? [item.category] : []),
-            quantity: null,
-            imageUrl: item.images?.[0] || null,
-            description: item.description || null,
-            ean: item.ean || null,
-            upc: item.upc || null,
-            source: 'upcitemdb',
-          });
-        } else {
-          res.json({ found: false });
+      // Try multiple Open Food Facts endpoints in parallel for better coverage
+      const [worldResponse, usResponse] = await Promise.all([
+        fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`).catch(() => null),
+        fetch(`https://us.openfoodfacts.org/api/v0/product/${barcode}.json`).catch(() => null),
+      ]);
+
+      // Check world.openfoodfacts.org first
+      if (worldResponse?.ok) {
+        const data = await worldResponse.json();
+        if (data.status === 1 && data.product && data.product.product_name) {
+          return res.json(formatOpenFoodFactsResponse(data.product, 'openfoodfacts-world'));
         }
       }
+
+      // Check US-specific Open Food Facts
+      if (usResponse?.ok) {
+        const usData = await usResponse.json();
+        if (usData.status === 1 && usData.product && usData.product.product_name) {
+          return res.json(formatOpenFoodFactsResponse(usData.product, 'openfoodfacts-us'));
+        }
+      }
+
+      // Try Open Beauty Facts for personal care items
+      try {
+        const beautyResponse = await fetch(`https://world.openbeautyfacts.org/api/v0/product/${barcode}.json`);
+        if (beautyResponse.ok) {
+          const beautyData = await beautyResponse.json();
+          if (beautyData.status === 1 && beautyData.product && beautyData.product.product_name) {
+            return res.json({
+              found: true,
+              name: beautyData.product.product_name || null,
+              brand: beautyData.product.brands || null,
+              category: 'other',
+              quantity: beautyData.product.quantity || null,
+              imageUrl: beautyData.product.image_front_url || beautyData.product.image_url || null,
+              ingredients: beautyData.product.ingredients_text || null,
+              source: 'openbeautyfacts',
+            });
+          }
+        }
+      } catch (e) {
+        // Continue to next source
+      }
+
+      // Try UPCitemdb as fallback
+      try {
+        const upcResponse = await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${barcode}`);
+        if (upcResponse.ok) {
+          const upcData = await upcResponse.json();
+          if (upcData.items && upcData.items.length > 0) {
+            const item = upcData.items[0];
+            return res.json({
+              found: true,
+              name: item.title || null,
+              brand: item.brand || null,
+              category: guessCategory(item.category ? [item.category] : []),
+              quantity: null,
+              imageUrl: item.images?.[0] || null,
+              description: item.description || null,
+              ean: item.ean || null,
+              upc: item.upc || null,
+              source: 'upcitemdb',
+            });
+          }
+        }
+      } catch (e) {
+        // Continue to next source
+      }
+
+      // Try Go-UPC API as another fallback (free tier)
+      try {
+        const goUpcResponse = await fetch(`https://go-upc.com/api/v1/code/${barcode}`);
+        if (goUpcResponse.ok) {
+          const goUpcData = await goUpcResponse.json();
+          if (goUpcData.product && goUpcData.product.name) {
+            return res.json({
+              found: true,
+              name: goUpcData.product.name || null,
+              brand: goUpcData.product.brand || null,
+              category: guessCategory(goUpcData.product.category ? [goUpcData.product.category] : []),
+              quantity: null,
+              imageUrl: goUpcData.product.imageUrl || null,
+              description: goUpcData.product.description || null,
+              source: 'go-upc',
+            });
+          }
+        }
+      } catch (e) {
+        // Continue
+      }
+
+      // No product found in any source
+      res.json({ found: false, barcode, message: "Product not found in any database" });
     } catch (error) {
       console.error("UPC lookup error:", error);
       res.json({ found: false, error: "Lookup failed" });
