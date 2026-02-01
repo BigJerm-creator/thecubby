@@ -210,7 +210,7 @@ export default function CategoryView() {
                       className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-colors"
                       data-testid={`button-move-to-${cat.id}`}
                     >
-                      <span className="text-2xl">{cat.icon}</span>
+                      <span className="text-2xl">{cat.image}</span>
                       <span className="text-xs text-center font-medium text-foreground">{cat.name}</span>
                     </button>
                   ))}

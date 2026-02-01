@@ -1,7 +1,7 @@
 import Layout from "@/components/layout";
 import { KITCHEN_CATEGORIES } from "@/lib/mockData";
 import { Link } from "wouter";
-import { ArrowRight, Leaf, Snowflake, Milk, Package, Weight, Archive, Wine, Droplets, Salad, Beef, Fish, Croissant, Baby, PawPrint } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { useInventory } from "@/lib/InventoryContext";
 import { useTheme } from "@/lib/ThemeContext";
@@ -32,25 +32,6 @@ export default function Kitchen() {
     return inventory[categoryId]?.length || 0;
   };
 
-  const getIcon = (id: string) => {
-    switch (id) {
-      case 'spices': return Leaf;
-      case 'refrigerated': return Milk;
-      case 'frozen': return Snowflake;
-      case 'canned': return Archive;
-      case 'boxed': return Package;
-      case 'bulk': return Weight;
-      case 'beverages': return Wine;
-      case 'condiments': return Droplets;
-      case 'produce': return Salad;
-      case 'meat': return Beef;
-      case 'seafood': return Fish;
-      case 'bakery': return Croissant;
-      case 'baby': return Baby;
-      case 'pet': return PawPrint;
-      default: return Package;
-    }
-  };
 
   return (
     <Layout>
@@ -67,7 +48,6 @@ export default function Kitchen() {
           className="grid gap-4"
         >
           {KITCHEN_CATEGORIES.map((category) => {
-            const Icon = getIcon(category.id);
             return (
               <Link href={`/category/${category.id}`} key={category.id}>
                 <motion.div 
@@ -76,8 +56,8 @@ export default function Kitchen() {
                 >
                   <div className="flex items-center justify-between z-10 relative">
                     <div className="flex items-center gap-4">
-                      <div className={cn("h-12 w-12 bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors", styleConfig.containerClass)}>
-                        <Icon size={22} strokeWidth={styleConfig.strokeWidth} />
+                      <div className={cn("h-12 w-12 bg-primary/10 flex items-center justify-center text-2xl group-hover:bg-primary transition-colors", styleConfig.containerClass)}>
+                        {category.image}
                       </div>
                       <div>
                         <h3 className="font-serif text-lg text-foreground font-medium group-hover:text-primary transition-colors">{category.name}</h3>
@@ -90,8 +70,8 @@ export default function Kitchen() {
                   </div>
                   
                   {/* Background decoration */}
-                  <div className="absolute -right-6 -bottom-6 opacity-5 group-hover:opacity-10 transition-opacity rotate-12">
-                    <Icon size={100} />
+                  <div className="absolute -right-6 -bottom-6 opacity-10 group-hover:opacity-20 transition-opacity rotate-12 text-8xl select-none pointer-events-none">
+                    {category.image}
                   </div>
                 </motion.div>
               </Link>
