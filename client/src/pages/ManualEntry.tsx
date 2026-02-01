@@ -321,19 +321,30 @@ export default function ManualEntry() {
 
           <div>
             <label className="text-sm font-medium text-foreground block mb-2">
-              Category *
+              Category * <span className="text-xs text-muted-foreground font-normal">(tap to change)</span>
             </label>
-            <select
-              name="category"
-              value={formData.category}
-              onChange={handleInputChange}
-              className="w-full px-4 py-2 bg-card border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
-              data-testid="select-category"
-            >
+            <div className="grid grid-cols-4 gap-2" data-testid="category-grid">
               {KITCHEN_CATEGORIES.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, category: cat.id }))}
+                  className={`flex flex-col items-center justify-center p-2 rounded-lg border-2 transition-all ${
+                    formData.category === cat.id
+                      ? 'border-primary bg-primary/10 ring-2 ring-primary/20'
+                      : 'border-border bg-card hover:border-primary/50'
+                  }`}
+                  data-testid={`category-${cat.id}`}
+                >
+                  <span className="text-xl mb-1">{cat.image}</span>
+                  <span className={`text-xs text-center leading-tight ${
+                    formData.category === cat.id ? 'text-primary font-medium' : 'text-muted-foreground'
+                  }`}>
+                    {cat.name}
+                  </span>
+                </button>
               ))}
-            </select>
+            </div>
           </div>
 
           <div>

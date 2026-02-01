@@ -206,15 +206,24 @@ export async function registerRoutes(
     const formatOpenFoodFactsResponse = (product: any, source: string) => {
       const name = product.product_name || product.product_name_en || product.generic_name || null;
       const brand = product.brands || null;
+      
+      // Gather all possible category hints from the product data
+      const categoryHints = [
+        ...(product.categories_tags || []),
+        ...(product.categories?.split(',') || []),
+        ...(product.labels_tags || []),
+        ...(product.stores_tags || []),
+        product.stores || '',
+        product.conservation_conditions || '',
+        product.storage_conditions || '',
+        product.packaging || '',
+      ];
+      
       return {
         found: true,
         name,
         brand,
-        category: guessCategory(
-          product.categories_tags || product.categories?.split(',') || [],
-          name,
-          brand
-        ),
+        category: guessCategory(categoryHints, name, brand),
         quantity: product.quantity || product.product_quantity || null,
         imageUrl: product.image_front_url || product.image_url || product.image_front_small_url || null,
         ingredients: product.ingredients_text || product.ingredients_text_en || null,
