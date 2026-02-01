@@ -163,15 +163,6 @@ export default function CategoryView() {
         </div>
       </div>
       
-      <div className="fixed bottom-24 right-6 z-30">
-        <button 
-          onClick={() => setLocation("/scan")}
-          className="h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer text-2xl"
-        >
-          ➕
-        </button>
-      </div>
-
       <AnimatePresence>
         {movingItem && (
           <motion.div
