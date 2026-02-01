@@ -58,6 +58,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       if (item.amountUnit) cleanItem.amountUnit = item.amountUnit;
       if (item.expiryDate) cleanItem.expiryDate = item.expiryDate;
       if (item.barcode) cleanItem.barcode = item.barcode;
+      if (item.imageUrl) cleanItem.imageUrl = item.imageUrl;
       await apiRequest('POST', '/api/inventory', cleanItem);
     },
     onSuccess: () => {

@@ -106,16 +106,29 @@ export default function CategoryView() {
                 key={item.id}
                 className="bg-card border border-border/50 p-4 rounded-xl shadow-sm flex justify-between items-center group"
               >
-                <div>
-                  <h3 className="font-medium text-foreground">{item.name}</h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">{item.brand}</p>
-                  
-                  {item.expiryDate && (
-                    <div className="flex items-center gap-1 mt-2 text-[10px] font-medium text-amber-600 bg-amber-50 w-fit px-2 py-0.5 rounded-full">
-                      <span>📅</span>
-                      <span>Exp: {item.expiryDate}</span>
+                <div className="flex items-center gap-3">
+                  {item.imageUrl ? (
+                    <img 
+                      src={item.imageUrl} 
+                      alt={item.name}
+                      className="w-12 h-12 object-contain rounded-lg bg-white flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 text-2xl">
+                      📦
                     </div>
                   )}
+                  <div>
+                    <h3 className="font-medium text-foreground">{item.name}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">{item.brand}</p>
+                    
+                    {item.expiryDate && (
+                      <div className="flex items-center gap-1 mt-2 text-[10px] font-medium text-amber-600 bg-amber-50 w-fit px-2 py-0.5 rounded-full">
+                        <span>📅</span>
+                        <span>Exp: {item.expiryDate}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2">

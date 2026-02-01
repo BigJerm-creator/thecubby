@@ -15,6 +15,7 @@ export const inventoryItems = pgTable("inventory_items", {
   category: text("category").notNull(),
   expiryDate: text("expiry_date"),
   barcode: text("barcode"),
+  imageUrl: text("image_url"),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
@@ -24,6 +25,7 @@ export const insertInventoryItemSchema = createInsertSchema(inventoryItems, {
   amountUnit: z.string().nullable().optional(),
   expiryDate: z.string().nullable().optional(),
   barcode: z.string().nullable().optional(),
+  imageUrl: z.string().nullable().optional(),
 }).omit({
   id: true,
   createdAt: true,

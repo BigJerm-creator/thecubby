@@ -125,7 +125,9 @@ export default function ManualEntry() {
         amountUnit: formData.amount ? formData.amountUnit : null,
         quantity: parseInt(formData.quantity),
         expiryDate: formData.expiryDate || null,
-        category: formData.category
+        category: formData.category,
+        barcode: productInfo.barcode || null,
+        imageUrl: productInfo.imageUrl || null
       });
 
       toast({
