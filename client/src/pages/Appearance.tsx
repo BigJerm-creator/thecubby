@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Layout from "@/components/layout";
-import { ArrowLeft, Sun, Moon, Check, Save, Sparkles, X } from "lucide-react";
+import { ArrowLeft, Sun, Moon, Check, Save, Sparkles, X, Home, ShoppingCart, Book, Settings, Heart, Star, Zap, Coffee, type LucideIcon } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -36,11 +36,48 @@ import summerWallpaper3 from '@assets/generated_images/summer_tropical_paradise_
 import summerWallpaper4 from '@assets/generated_images/summer_poolside_wallpaper.png';
 import summerWallpaper5 from '@assets/generated_images/summer_ice_cream_wallpaper.png';
 
-const ICON_STYLES: { id: IconStyle; label: string; preview: string }[] = [
-  { id: "default", label: "Default", preview: "○" },
-  { id: "rounded", label: "Rounded", preview: "◉" },
-  { id: "sharp", label: "Sharp", preview: "◇" },
-  { id: "playful", label: "Playful", preview: "✦" },
+interface IconStyleConfig {
+  id: IconStyle;
+  label: string;
+  description: string;
+  iconClass: string;
+  containerClass: string;
+  previewIcons: LucideIcon[];
+}
+
+const ICON_STYLES: IconStyleConfig[] = [
+  { 
+    id: "default", 
+    label: "Classic", 
+    description: "Clean & minimal",
+    iconClass: "stroke-[1.5]",
+    containerClass: "bg-muted/50 rounded-lg",
+    previewIcons: [Home, ShoppingCart, Book, Settings]
+  },
+  { 
+    id: "rounded", 
+    label: "Soft", 
+    description: "Rounded & gentle",
+    iconClass: "stroke-[2]",
+    containerClass: "bg-primary/10 rounded-full",
+    previewIcons: [Heart, Star, Coffee, Home]
+  },
+  { 
+    id: "sharp", 
+    label: "Bold", 
+    description: "Strong & precise",
+    iconClass: "stroke-[2.5]",
+    containerClass: "bg-foreground/10 rounded-none",
+    previewIcons: [Zap, Settings, Book, Star]
+  },
+  { 
+    id: "playful", 
+    label: "Fun", 
+    description: "Colorful & lively",
+    iconClass: "stroke-[1.75]",
+    containerClass: "bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-900/30 dark:to-purple-900/30 rounded-xl",
+    previewIcons: [Star, Heart, Sparkles, Coffee]
+  },
 ];
 
 const COLOR_THEMES: { id: ColorTheme; label: string; colors: string[] }[] = [
@@ -227,20 +264,38 @@ export default function Appearance() {
         <section className="space-y-4">
           <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1">Icon Style</h3>
           <div className="bg-card border border-border rounded-2xl p-4">
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 gap-3">
               {ICON_STYLES.map((style) => (
                 <button
                   key={style.id}
                   onClick={() => setIconStyle(style.id)}
-                  className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${
+                  className={`relative flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all ${
                     iconStyle === style.id
                       ? "border-primary bg-primary/10"
                       : "border-border hover:border-primary/50"
                   }`}
                   data-testid={`button-icon-${style.id}`}
                 >
-                  <span className="text-2xl">{style.preview}</span>
-                  <span className="text-xs font-medium">{style.label}</span>
+                  {iconStyle === style.id && (
+                    <Check className="text-primary absolute top-2 right-2" size={14} />
+                  )}
+                  <div className="grid grid-cols-2 gap-2">
+                    {style.previewIcons.map((Icon, idx) => (
+                      <div 
+                        key={idx} 
+                        className={`h-9 w-9 flex items-center justify-center ${style.containerClass}`}
+                      >
+                        <Icon 
+                          size={18} 
+                          className={`text-foreground ${style.iconClass}`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-center">
+                    <span className="text-sm font-medium block">{style.label}</span>
+                    <span className="text-[10px] text-muted-foreground">{style.description}</span>
+                  </div>
                 </button>
               ))}
             </div>
