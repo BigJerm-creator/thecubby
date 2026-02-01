@@ -16,40 +16,165 @@ const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
 
-function guessCategory(categories: string[]): string {
-  const categoryMap: Record<string, string> = {
-    'spices': 'spices',
-    'seasonings': 'spices',
-    'herbs': 'spices',
-    'dairy': 'refrigerated',
-    'milk': 'refrigerated',
-    'cheese': 'refrigerated',
-    'yogurt': 'refrigerated',
-    'refrigerated': 'refrigerated',
-    'frozen': 'frozen',
-    'ice cream': 'frozen',
-    'canned': 'canned',
-    'preserved': 'canned',
-    'cereal': 'boxed',
-    'pasta': 'boxed',
-    'crackers': 'boxed',
-    'rice': 'bulk',
-    'grains': 'bulk',
-    'flour': 'bulk',
-    'sugar': 'bulk',
-    'beans': 'bulk',
-    'lentils': 'bulk',
+function guessCategory(categories: string[], productName?: string, brand?: string): string {
+  const categoryKeywords: Record<string, string[]> = {
+    'spices': [
+      'spice', 'spices', 'seasoning', 'seasonings', 'herb', 'herbs', 'pepper', 'salt',
+      'cinnamon', 'oregano', 'basil', 'thyme', 'rosemary', 'cumin', 'paprika', 'turmeric',
+      'garlic powder', 'onion powder', 'chili', 'curry', 'ginger', 'nutmeg', 'cloves',
+      'bay leaves', 'dill', 'parsley', 'cilantro', 'sage', 'tarragon', 'cardamom',
+      'coriander', 'fennel', 'mustard seed', 'cayenne', 'allspice', 'vanilla extract',
+      'extract', 'flavoring', 'bouillon', 'stock cube'
+    ],
+    'refrigerated': [
+      'dairy', 'milk', 'cheese', 'yogurt', 'yoghurt', 'butter', 'cream', 'egg', 'eggs',
+      'margarine', 'sour cream', 'cottage cheese', 'cream cheese', 'ricotta', 'mozzarella',
+      'cheddar', 'parmesan', 'feta', 'brie', 'gouda', 'swiss', 'provolone', 'deli',
+      'cold cuts', 'bacon', 'sausage', 'hot dog', 'fresh pasta', 'fresh juice',
+      'orange juice', 'apple juice', 'hummus', 'dip', 'guacamole', 'salsa', 'pesto',
+      'tofu', 'tempeh', 'fresh', 'refrigerate', 'chilled', 'keep cold', 'lunchable',
+      'dough', 'biscuits', 'croissant', 'pie crust', 'tortilla'
+    ],
+    'frozen': [
+      'frozen', 'ice cream', 'ice-cream', 'gelato', 'sorbet', 'popsicle', 'freezer',
+      'frozen pizza', 'frozen dinner', 'frozen vegetable', 'frozen fruit', 'frozen meal',
+      'fish sticks', 'fish fingers', 'frozen fish', 'frozen shrimp', 'frozen chicken',
+      'frozen beef', 'frozen pork', 'tv dinner', 'microwave meal', 'pot pie',
+      'frozen waffle', 'frozen pancake', 'frozen breakfast', 'frozen dessert',
+      'frozen appetizer', 'frozen snack', 'frozen bread', 'frozen bagel', 'eggo',
+      'lean cuisine', 'stouffers', 'marie callender', 'birds eye', 'green giant'
+    ],
+    'canned': [
+      'canned', 'can', 'tinned', 'preserved', 'jarred', 'pickled', 'pickle',
+      'canned vegetable', 'canned fruit', 'canned bean', 'canned soup', 'canned meat',
+      'canned fish', 'tuna', 'salmon', 'sardine', 'anchovy', 'canned tomato',
+      'tomato sauce', 'tomato paste', 'crushed tomato', 'diced tomato', 'stewed tomato',
+      'canned corn', 'canned pea', 'canned green bean', 'canned mushroom',
+      'canned olive', 'olive', 'caper', 'artichoke', 'roasted pepper', 'chipotle',
+      'coconut milk', 'evaporated milk', 'condensed milk', 'canned pumpkin',
+      'canned chili', 'canned ravioli', 'spam', 'corned beef', 'vienna sausage',
+      'campbell', 'progresso', 'chef boyardee', 'del monte', 'dole', 'libby'
+    ],
+    'boxed': [
+      'cereal', 'breakfast cereal', 'oatmeal', 'granola', 'muesli', 'pasta', 'noodle',
+      'macaroni', 'spaghetti', 'penne', 'linguine', 'fettuccine', 'lasagna', 'ramen',
+      'cracker', 'cookie', 'biscuit', 'snack', 'chip', 'pretzel', 'popcorn',
+      'granola bar', 'protein bar', 'energy bar', 'fruit snack', 'gummy',
+      'boxed', 'box', 'dry mix', 'cake mix', 'brownie mix', 'pancake mix',
+      'muffin mix', 'bread mix', 'stuffing', 'instant', 'ready to eat',
+      'mac and cheese', 'hamburger helper', 'rice a roni', 'kraft', 'general mills',
+      'kellogg', 'post', 'quaker', 'nabisco', 'pepperidge farm', 'little debbie',
+      'hostess', 'pop tart', 'toaster pastry', 'breakfast bar'
+    ],
+    'bulk': [
+      'rice', 'grain', 'flour', 'sugar', 'salt', 'baking', 'bean', 'lentil',
+      'quinoa', 'couscous', 'barley', 'farro', 'bulgur', 'millet', 'buckwheat',
+      'oat', 'wheat', 'corn meal', 'polenta', 'grits', 'semolina',
+      'all purpose flour', 'bread flour', 'whole wheat flour', 'almond flour',
+      'coconut flour', 'brown sugar', 'powdered sugar', 'confectioner',
+      'baking soda', 'baking powder', 'yeast', 'cornstarch', 'arrowroot',
+      'dried bean', 'dried lentil', 'chickpea', 'black bean', 'kidney bean',
+      'pinto bean', 'navy bean', 'split pea', 'dried fruit', 'raisin', 'date',
+      'dried apricot', 'prune', 'nut', 'almond', 'walnut', 'pecan', 'cashew',
+      'peanut', 'seed', 'sunflower seed', 'pumpkin seed', 'chia seed', 'flax seed',
+      'honey', 'maple syrup', 'agave', 'molasses', 'corn syrup'
+    ],
+    'beverages': [
+      'beverage', 'drink', 'soda', 'cola', 'pop', 'soft drink', 'sparkling',
+      'water', 'mineral water', 'spring water', 'tea', 'coffee', 'espresso',
+      'juice', 'lemonade', 'punch', 'sports drink', 'energy drink', 'gatorade',
+      'powerade', 'red bull', 'monster', 'kombucha', 'coconut water',
+      'almond milk', 'oat milk', 'soy milk', 'plant milk', 'non-dairy',
+      'wine', 'beer', 'alcohol', 'spirit', 'liquor', 'mixer', 'tonic',
+      'coca cola', 'pepsi', 'sprite', 'fanta', 'dr pepper', 'mountain dew',
+      'starbucks', 'nescafe', 'lipton', 'snapple', 'arizona', 'tropicana'
+    ],
+    'condiments': [
+      'condiment', 'sauce', 'ketchup', 'mustard', 'mayonnaise', 'mayo', 'relish',
+      'bbq sauce', 'barbecue', 'hot sauce', 'sriracha', 'tabasco', 'soy sauce',
+      'teriyaki', 'worcestershire', 'fish sauce', 'oyster sauce', 'hoisin',
+      'vinegar', 'balsamic', 'apple cider vinegar', 'red wine vinegar',
+      'oil', 'olive oil', 'vegetable oil', 'canola oil', 'coconut oil', 'sesame oil',
+      'dressing', 'salad dressing', 'ranch', 'italian dressing', 'caesar',
+      'jam', 'jelly', 'preserve', 'marmalade', 'peanut butter', 'nutella',
+      'almond butter', 'tahini', 'hummus', 'spread', 'heinz', 'hellmann',
+      'french', 'hidden valley', 'kraft dressing', 'wish bone', 'newman'
+    ],
+    'produce': [
+      'produce', 'vegetable', 'fruit', 'fresh produce', 'organic', 'apple',
+      'banana', 'orange', 'grape', 'strawberry', 'blueberry', 'raspberry',
+      'lemon', 'lime', 'avocado', 'tomato', 'potato', 'onion', 'garlic',
+      'carrot', 'celery', 'broccoli', 'cauliflower', 'spinach', 'lettuce',
+      'kale', 'cabbage', 'pepper', 'cucumber', 'zucchini', 'squash',
+      'mushroom', 'corn', 'pea', 'green bean', 'asparagus', 'eggplant'
+    ],
+    'meat': [
+      'meat', 'beef', 'pork', 'chicken', 'turkey', 'lamb', 'veal', 'poultry',
+      'steak', 'ground beef', 'ground turkey', 'ground chicken', 'roast',
+      'chop', 'rib', 'tenderloin', 'brisket', 'ham', 'prosciutto', 'salami',
+      'pepperoni', 'chorizo', 'bratwurst', 'kielbasa', 'fresh meat', 'butcher',
+      'deli meat', 'lunch meat', 'oscar mayer', 'hillshire', 'johnsonville',
+      'tyson', 'perdue', 'foster farms', 'jennie-o', 'butterball'
+    ],
+    'seafood': [
+      'seafood', 'fish', 'shrimp', 'salmon', 'tilapia', 'cod', 'halibut',
+      'tuna steak', 'fresh tuna', 'swordfish', 'mahi', 'sea bass', 'trout',
+      'catfish', 'crab', 'lobster', 'clam', 'mussel', 'oyster', 'scallop',
+      'calamari', 'squid', 'octopus', 'crawfish', 'crayfish', 'fresh fish',
+      'sushi grade', 'sashimi', 'gorton', 'van de kamp'
+    ],
+    'bakery': [
+      'bakery', 'bread', 'baguette', 'loaf', 'roll', 'bun', 'bagel', 'english muffin',
+      'croissant', 'danish', 'pastry', 'donut', 'doughnut', 'muffin', 'scone',
+      'cake', 'cupcake', 'pie', 'tart', 'cookie', 'brownie', 'baked goods',
+      'sara lee', 'pepperidge', 'entenmann', 'thomas', 'arnold', 'nature own',
+      'dave killer bread', 'wonder bread', 'sourdough', 'whole wheat bread',
+      'white bread', 'rye bread', 'multigrain', 'ciabatta', 'focaccia', 'pita',
+      'naan', 'flatbread', 'wrap', 'tortilla wrap'
+    ],
+    'baby': [
+      'baby', 'infant', 'toddler', 'baby food', 'formula', 'baby formula',
+      'gerber', 'similac', 'enfamil', 'baby cereal', 'baby snack', 'puffs',
+      'baby puree', 'stage 1', 'stage 2', 'stage 3', 'teething', 'baby juice'
+    ],
+    'pet': [
+      'pet', 'dog', 'cat', 'pet food', 'dog food', 'cat food', 'pet treat',
+      'dog treat', 'cat treat', 'kibble', 'purina', 'pedigree', 'iams',
+      'blue buffalo', 'fancy feast', 'meow mix', 'friskies', 'cesar', 'beneful'
+    ]
   };
+
+  // Combine all text sources for matching
+  const allText = [
+    ...categories.map(c => c.toLowerCase().replace(/^en:/, '')),
+    (productName || '').toLowerCase(),
+    (brand || '').toLowerCase()
+  ].join(' ');
+
+  // Score each category based on keyword matches
+  const scores: Record<string, number> = {};
   
-  const normalized = categories.map(c => c.toLowerCase().replace(/^en:/, ''));
-  for (const cat of normalized) {
-    for (const [keyword, category] of Object.entries(categoryMap)) {
-      if (cat.includes(keyword)) {
-        return category;
+  for (const [category, keywords] of Object.entries(categoryKeywords)) {
+    scores[category] = 0;
+    for (const keyword of keywords) {
+      if (allText.includes(keyword.toLowerCase())) {
+        scores[category] += keyword.split(' ').length;
       }
     }
   }
-  return 'boxed';
+
+  // Find the category with the highest score
+  let bestCategory = 'boxed';
+  let bestScore = 0;
+  
+  for (const [category, score] of Object.entries(scores)) {
+    if (score > bestScore) {
+      bestScore = score;
+      bestCategory = category;
+    }
+  }
+
+  return bestCategory;
 }
 
 export async function registerRoutes(
@@ -78,22 +203,30 @@ export async function registerRoutes(
     };
 
     // Helper to format Open Food Facts response
-    const formatOpenFoodFactsResponse = (product: any, source: string) => ({
-      found: true,
-      name: product.product_name || product.product_name_en || product.generic_name || null,
-      brand: product.brands || null,
-      category: guessCategory(product.categories_tags || product.categories?.split(',') || []),
-      quantity: product.quantity || product.product_quantity || null,
-      imageUrl: product.image_front_url || product.image_url || product.image_front_small_url || null,
-      ingredients: product.ingredients_text || product.ingredients_text_en || null,
-      allergens: product.allergens_tags?.map((a: string) => a.replace('en:', '')) || [],
-      nutrition: extractNutrition(product.nutriments || {}),
-      servingSize: product.serving_size || null,
-      nutriscore: product.nutriscore_grade || null,
-      novaGroup: product.nova_group || null,
-      countries: product.countries || null,
-      source,
-    });
+    const formatOpenFoodFactsResponse = (product: any, source: string) => {
+      const name = product.product_name || product.product_name_en || product.generic_name || null;
+      const brand = product.brands || null;
+      return {
+        found: true,
+        name,
+        brand,
+        category: guessCategory(
+          product.categories_tags || product.categories?.split(',') || [],
+          name,
+          brand
+        ),
+        quantity: product.quantity || product.product_quantity || null,
+        imageUrl: product.image_front_url || product.image_url || product.image_front_small_url || null,
+        ingredients: product.ingredients_text || product.ingredients_text_en || null,
+        allergens: product.allergens_tags?.map((a: string) => a.replace('en:', '')) || [],
+        nutrition: extractNutrition(product.nutriments || {}),
+        servingSize: product.serving_size || null,
+        nutriscore: product.nutriscore_grade || null,
+        novaGroup: product.nova_group || null,
+        countries: product.countries || null,
+        source,
+      };
+    };
 
     try {
       // Try multiple Open Food Facts endpoints in parallel for better coverage
@@ -147,11 +280,13 @@ export async function registerRoutes(
           const upcData = await upcResponse.json();
           if (upcData.items && upcData.items.length > 0) {
             const item = upcData.items[0];
+            const itemName = item.title || null;
+            const itemBrand = item.brand || null;
             return res.json({
               found: true,
-              name: item.title || null,
-              brand: item.brand || null,
-              category: guessCategory(item.category ? [item.category] : []),
+              name: itemName,
+              brand: itemBrand,
+              category: guessCategory(item.category ? [item.category] : [], itemName, itemBrand),
               quantity: null,
               imageUrl: item.images?.[0] || null,
               description: item.description || null,
@@ -171,11 +306,17 @@ export async function registerRoutes(
         if (goUpcResponse.ok) {
           const goUpcData = await goUpcResponse.json();
           if (goUpcData.product && goUpcData.product.name) {
+            const goName = goUpcData.product.name || null;
+            const goBrand = goUpcData.product.brand || null;
             return res.json({
               found: true,
-              name: goUpcData.product.name || null,
-              brand: goUpcData.product.brand || null,
-              category: guessCategory(goUpcData.product.category ? [goUpcData.product.category] : []),
+              name: goName,
+              brand: goBrand,
+              category: guessCategory(
+                goUpcData.product.category ? [goUpcData.product.category] : [],
+                goName,
+                goBrand
+              ),
               quantity: null,
               imageUrl: goUpcData.product.imageUrl || null,
               description: goUpcData.product.description || null,
