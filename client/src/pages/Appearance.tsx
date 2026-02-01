@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Layout from "@/components/layout";
-import { ArrowLeft, Sun, Moon, Check, Save, Sparkles, X, Home, ShoppingCart, Book, Settings, Heart, Star, Zap, Coffee, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Sun, Moon, Check, Save, Sparkles, X, Refrigerator, ShoppingBasket, UtensilsCrossed, Cookie, Carrot, Apple, Milk, Sandwich, Egg, IceCream, Pizza, Beef, type LucideIcon } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -52,7 +52,7 @@ const ICON_STYLES: IconStyleConfig[] = [
     description: "Clean & minimal",
     iconClass: "stroke-[1.5]",
     containerClass: "bg-muted/50 rounded-lg",
-    previewIcons: [Home, ShoppingCart, Book, Settings]
+    previewIcons: [Refrigerator, ShoppingBasket, Carrot, Milk]
   },
   { 
     id: "rounded", 
@@ -60,7 +60,7 @@ const ICON_STYLES: IconStyleConfig[] = [
     description: "Rounded & gentle",
     iconClass: "stroke-[2]",
     containerClass: "bg-primary/10 rounded-full",
-    previewIcons: [Heart, Star, Coffee, Home]
+    previewIcons: [Apple, Egg, Cookie, UtensilsCrossed]
   },
   { 
     id: "sharp", 
@@ -68,7 +68,7 @@ const ICON_STYLES: IconStyleConfig[] = [
     description: "Strong & precise",
     iconClass: "stroke-[2.5]",
     containerClass: "bg-foreground/10 rounded-none",
-    previewIcons: [Zap, Settings, Book, Star]
+    previewIcons: [Beef, Pizza, Sandwich, Refrigerator]
   },
   { 
     id: "playful", 
@@ -76,7 +76,7 @@ const ICON_STYLES: IconStyleConfig[] = [
     description: "Colorful & lively",
     iconClass: "stroke-[1.75]",
     containerClass: "bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-900/30 dark:to-purple-900/30 rounded-xl",
-    previewIcons: [Star, Heart, Sparkles, Coffee]
+    previewIcons: [IceCream, Cookie, Apple, Carrot]
   },
 ];
 
