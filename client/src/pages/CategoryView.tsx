@@ -1,7 +1,7 @@
 import Layout from "@/components/layout";
 import { Link, useRoute, useLocation } from "wouter";
 import { KITCHEN_CATEGORIES } from "@/lib/mockData";
-import { ArrowLeft, Plus, Filter, MoreHorizontal, Calendar, Trash2, ShoppingCart, Loader2, ArrowRightLeft, X } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useInventory } from "@/lib/InventoryContext";
 import { useShoppingList } from "@/lib/ShoppingListContext";
@@ -67,16 +67,16 @@ export default function CategoryView() {
       <div className="space-y-6">
         <div className="flex items-center justify-between pt-4 pb-2">
           <Link href="/kitchen">
-            <button className="p-2 -ml-2 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground">
-              <ArrowLeft size={20} />
+            <button className="p-2 -ml-2 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground text-xl">
+              ←
             </button>
           </Link>
           <div className="flex gap-2">
-            <button className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground">
-              <Filter size={20} />
+            <button className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground text-lg">
+              🔽
             </button>
-            <button className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground">
-              <MoreHorizontal size={20} />
+            <button className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground text-lg">
+              ⋯
             </button>
           </div>
         </div>
@@ -112,7 +112,7 @@ export default function CategoryView() {
                   
                   {item.expiryDate && (
                     <div className="flex items-center gap-1 mt-2 text-[10px] font-medium text-amber-600 bg-amber-50 w-fit px-2 py-0.5 rounded-full">
-                      <Calendar size={10} />
+                      <span>📅</span>
                       <span>Exp: {item.expiryDate}</span>
                     </div>
                   )}
@@ -132,29 +132,29 @@ export default function CategoryView() {
                   
                   <button 
                     onClick={() => setMovingItem({ id: item.id, name: item.name })}
-                    className="h-8 w-8 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 hover:bg-purple-600 hover:text-purple-50 transition-colors"
+                    className="h-8 w-8 rounded-full bg-purple-50 flex items-center justify-center hover:bg-purple-600 transition-colors text-sm"
                     data-testid={`button-move-item-${item.id}`}
                     title="Move to another category"
                   >
-                    <ArrowRightLeft size={16} />
+                    ↔️
                   </button>
                   
                   <button 
                     onClick={() => handleAddToShoppingList(item.name)}
-                    className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 hover:bg-blue-600 hover:text-blue-50 transition-colors"
+                    className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center hover:bg-blue-600 transition-colors text-sm"
                     data-testid={`button-add-to-shopping-list-${item.id}`}
                     title="Add to shopping list"
                   >
-                    <ShoppingCart size={16} />
+                    🛒
                   </button>
 
                   <button 
                     onClick={() => handleDeleteItem(item.id)}
-                    className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                    className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center hover:bg-destructive transition-colors text-sm"
                     data-testid={`button-delete-item-${item.id}`}
                     title="Delete item"
                   >
-                    <Trash2 size={16} />
+                    🗑️
                   </button>
                 </div>
               </motion.div>
@@ -166,9 +166,9 @@ export default function CategoryView() {
       <div className="fixed bottom-24 right-6 z-30">
         <button 
           onClick={() => setLocation("/scan")}
-          className="h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer"
+          className="h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-transform cursor-pointer text-2xl"
         >
-          <Plus size={24} />
+          ➕
         </button>
       </div>
 
@@ -195,9 +195,9 @@ export default function CategoryView() {
                 </h3>
                 <button
                   onClick={() => setMovingItem(null)}
-                  className="p-2 -mr-2 hover:bg-muted rounded-full transition-colors"
+                  className="p-2 -mr-2 hover:bg-muted rounded-full transition-colors text-lg"
                 >
-                  <X size={20} />
+                  ✕
                 </button>
               </div>
               <div className="p-4 overflow-y-auto max-h-[calc(70vh-80px)]">

@@ -1,5 +1,5 @@
 import Layout from "@/components/layout";
-import { Package, AlertCircle, ShoppingCart, ChefHat, Book, CalendarDays, Coffee, Sun, Moon, Cookie, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useInventory } from "@/lib/InventoryContext";
 import { useShoppingList } from "@/lib/ShoppingListContext";
@@ -11,11 +11,11 @@ import { useTheme } from "@/lib/ThemeContext";
 import { getIconStyleConfig } from "@/components/StyledIcon";
 import { cn } from "@/lib/utils";
 
-const mealTypeIcons: Record<string, any> = {
-  breakfast: Coffee,
-  lunch: Sun,
-  dinner: Moon,
-  snack: Cookie,
+const mealTypeEmojis: Record<string, string> = {
+  breakfast: "☕",
+  lunch: "🌞",
+  dinner: "🌙",
+  snack: "🍪",
 };
 
 const mealTypeColors: Record<string, string> = {
@@ -104,7 +104,7 @@ export default function Home() {
             data-testid="button-shopping-list"
           >
             <div className="flex items-start justify-between mb-2">
-              <ShoppingCart className="text-blue-600" size={24} strokeWidth={styleConfig.strokeWidth} />
+              <span className="text-2xl">🛒</span>
               <span className="text-2xl font-serif font-bold text-foreground">{shoppingListCount}</span>
             </div>
             <p className="text-xs text-blue-700 font-medium">Shopping List</p>
@@ -115,7 +115,7 @@ export default function Home() {
             data-testid="button-expired-items"
           >
             <div className="flex items-start justify-between mb-2">
-              <AlertCircle className="text-amber-600" size={24} strokeWidth={styleConfig.strokeWidth} />
+              <span className="text-2xl">⚠️</span>
               <span className="text-2xl font-serif font-bold text-foreground">{expiredCount}</span>
             </div>
             <p className="text-xs text-amber-700 font-medium">Expired Items</p>
@@ -129,8 +129,8 @@ export default function Home() {
             className={cn("w-full bg-card/95 backdrop-blur-sm p-4 border border-primary/30 hover:border-primary/50 transition-colors text-left flex items-center gap-4 shadow-sm", styleConfig.containerClass)}
             data-testid="button-recipe-generator"
           >
-            <div className={cn("h-12 w-12 bg-primary/20 flex items-center justify-center", styleConfig.containerClass)}>
-              <ChefHat className="text-primary" size={24} strokeWidth={styleConfig.strokeWidth} />
+            <div className={cn("h-12 w-12 bg-primary/20 flex items-center justify-center text-2xl", styleConfig.containerClass)}>
+              👨‍🍳
             </div>
             <div>
               <h3 className="font-serif font-medium text-foreground">Recipe Generator</h3>
@@ -143,8 +143,8 @@ export default function Home() {
             className={cn("w-full bg-card/95 backdrop-blur-sm p-4 border border-amber-500/30 hover:border-amber-500/50 transition-colors text-left flex items-center gap-4 shadow-sm", styleConfig.containerClass)}
             data-testid="button-recipe-book"
           >
-            <div className={cn("h-12 w-12 bg-amber-500/20 flex items-center justify-center", styleConfig.containerClass)}>
-              <Book className="text-amber-600" size={24} strokeWidth={styleConfig.strokeWidth} />
+            <div className={cn("h-12 w-12 bg-amber-500/20 flex items-center justify-center text-2xl", styleConfig.containerClass)}>
+              📖
             </div>
             <div>
               <h3 className="font-serif font-medium text-foreground">Recipe Book</h3>
@@ -157,8 +157,8 @@ export default function Home() {
             className={cn("w-full bg-card/95 backdrop-blur-sm p-4 border border-violet-500/30 hover:border-violet-500/50 transition-colors text-left flex items-center gap-4 shadow-sm", styleConfig.containerClass)}
             data-testid="button-meal-plan"
           >
-            <div className={cn("h-12 w-12 bg-violet-500/20 flex items-center justify-center", styleConfig.containerClass)}>
-              <CalendarDays className="text-violet-600" size={24} strokeWidth={styleConfig.strokeWidth} />
+            <div className={cn("h-12 w-12 bg-violet-500/20 flex items-center justify-center text-2xl", styleConfig.containerClass)}>
+              📅
             </div>
             <div>
               <h3 className="font-serif font-medium text-foreground">Meal Plan</h3>
@@ -176,7 +176,7 @@ export default function Home() {
             </div>
             <div className="space-y-2">
               {todaysMeals.map((meal) => {
-                const Icon = mealTypeIcons[meal.mealType] || CalendarDays;
+                const emoji = mealTypeEmojis[meal.mealType] || "🍽️";
                 const colorClass = mealTypeColors[meal.mealType] || "bg-gray-100 text-gray-800";
                 return (
                   <div
@@ -184,8 +184,8 @@ export default function Home() {
                     className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border"
                     data-testid={`today-meal-${meal.id}`}
                   >
-                    <div className={`p-2 rounded-lg ${colorClass}`}>
-                      <Icon size={18} />
+                    <div className={`p-2 rounded-lg ${colorClass} text-lg`}>
+                      {emoji}
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-foreground">
@@ -220,8 +220,8 @@ export default function Home() {
             <p className="text-sm text-muted-foreground mb-4">Keep spices away from heat and light to preserve flavor potency longer.</p>
             <button className="text-xs font-bold text-primary border-b border-primary/30 pb-0.5">Read More</button>
           </div>
-          <div className="absolute -right-4 -bottom-8 opacity-10">
-             <Package size={120} />
+          <div className="absolute -right-4 -bottom-8 opacity-10 text-[120px] select-none pointer-events-none">
+             🧂
           </div>
         </div>
       </div>

@@ -1,5 +1,4 @@
 import Layout from "@/components/layout";
-import { User, Bell, Shield, HelpCircle, LogOut, ChevronRight, Moon } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
@@ -35,14 +34,14 @@ export default function Settings() {
           data-testid="button-profile"
         >
           <div className="p-4 flex items-center gap-4">
-            <div className="h-12 w-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-serif text-xl">
-              <User size={24} />
+            <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-2xl">
+              👤
             </div>
             <div className="flex-1 text-left">
               <h3 className="font-medium text-foreground">My Profile</h3>
               <p className="text-xs text-muted-foreground">Personal info & dietary preferences</p>
             </div>
-            <ChevronRight size={16} className="text-muted-foreground" />
+            <span className="text-muted-foreground">›</span>
           </div>
         </button>
 
@@ -55,10 +54,10 @@ export default function Settings() {
               data-testid="button-settings-notifications"
             >
               <div className="flex items-center gap-3">
-                <Bell size={20} className="text-muted-foreground" />
+                <span className="text-lg">🔔</span>
                 <span className="text-foreground">Notifications</span>
               </div>
-              <ChevronRight size={16} className="text-muted-foreground" />
+              <span className="text-muted-foreground">›</span>
             </button>
             <button 
               onClick={() => setLocation("/appearance")}
@@ -66,10 +65,10 @@ export default function Settings() {
               data-testid="button-settings-appearance"
             >
               <div className="flex items-center gap-3">
-                <Moon size={20} className="text-muted-foreground" />
+                <span className="text-lg">🎨</span>
                 <span className="text-foreground">Appearance</span>
               </div>
-              <ChevronRight size={16} className="text-muted-foreground" />
+              <span className="text-muted-foreground">›</span>
             </button>
             <button 
               onClick={() => handleMenuClick("Privacy & Security")}
@@ -77,10 +76,10 @@ export default function Settings() {
               data-testid="button-settings-privacy-security"
             >
               <div className="flex items-center gap-3">
-                <Shield size={20} className="text-muted-foreground" />
+                <span className="text-lg">🔒</span>
                 <span className="text-foreground">Privacy & Security</span>
               </div>
-              <ChevronRight size={16} className="text-muted-foreground" />
+              <span className="text-muted-foreground">›</span>
             </button>
           </div>
 
@@ -92,10 +91,10 @@ export default function Settings() {
                data-testid="button-settings-help-faq"
              >
                 <div className="flex items-center gap-3">
-                  <HelpCircle size={20} className="text-muted-foreground" />
+                  <span className="text-lg">❓</span>
                   <span className="text-foreground">Help & FAQ</span>
                 </div>
-                <ChevronRight size={16} className="text-muted-foreground" />
+                <span className="text-muted-foreground">›</span>
               </button>
           </div>
           
@@ -104,7 +103,7 @@ export default function Settings() {
              className="w-full flex items-center justify-center gap-2 p-4 text-destructive hover:bg-destructive/5 rounded-2xl transition-colors mt-6 font-medium"
              data-testid="button-sign-out"
            >
-              <LogOut size={20} />
+              <span className="text-lg">🚪</span>
               Sign Out
            </button>
         </div>

@@ -1,6 +1,5 @@
 import React from 'react';
 import { useLocation, Link } from "wouter";
-import { Home, Search, ScanLine, Settings, UtensilsCrossed } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/lib/ThemeContext";
 import { getIconStyleConfig } from "./StyledIcon";
@@ -11,11 +10,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const styleConfig = getIconStyleConfig(iconStyle);
 
   const navItems = [
-    { icon: Home, label: "Home", path: "/" },
-    { icon: UtensilsCrossed, label: "Kitchen", path: "/kitchen" },
-    { icon: ScanLine, label: "Scan", path: "/scan", isPrimary: true },
-    { icon: Search, label: "Search", path: "/search" },
-    { icon: Settings, label: "Settings", path: "/settings" },
+    { emoji: "🏠", label: "Home", path: "/" },
+    { emoji: "🍳", label: "Kitchen", path: "/kitchen" },
+    { emoji: "📷", label: "Scan", path: "/scan", isPrimary: true },
+    { emoji: "🔍", label: "Search", path: "/search" },
+    { emoji: "⚙️", label: "Settings", path: "/settings" },
   ];
 
   return (
@@ -36,15 +35,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div className="bg-card/80 backdrop-blur-lg border-t border-border w-full md:max-w-md md:mx-auto pb-6 pt-3 px-2 flex justify-around items-end">
           {navItems.map((item) => {
             const isActive = location === item.path;
-            const Icon = item.icon;
             
             if (item.isPrimary) {
                return (
                 <Link key={item.path} href={item.path}>
                   <div className="relative -top-5 group cursor-pointer">
                     <div className={cn("absolute inset-0 bg-primary/20 blur-md group-hover:bg-primary/30 transition-all", styleConfig.containerClass)} />
-                    <div className={cn("bg-primary text-primary-foreground h-14 w-14 flex items-center justify-center shadow-lg transform transition-transform group-active:scale-95 border-4 border-background", styleConfig.containerClass)}>
-                      <Icon size={24} strokeWidth={styleConfig.strokeWidth} />
+                    <div className={cn("bg-primary h-14 w-14 flex items-center justify-center shadow-lg transform transition-transform group-active:scale-95 border-4 border-background", styleConfig.containerClass)}>
+                      <span className="text-2xl">{item.emoji}</span>
                     </div>
                   </div>
                 </Link>
@@ -56,9 +54,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 <div className={cn(
                   "flex flex-col items-center gap-1 p-2 transition-colors cursor-pointer",
                   styleConfig.containerClass,
-                  isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                  isActive ? "opacity-100" : "opacity-60 hover:opacity-80"
                 )}>
-                  <Icon size={22} strokeWidth={isActive ? styleConfig.strokeWidth + 0.5 : styleConfig.strokeWidth} />
+                  <span className={cn("text-xl", isActive && "scale-110")}>{item.emoji}</span>
                   <span className="text-[10px] font-medium">{item.label}</span>
                 </div>
               </Link>
