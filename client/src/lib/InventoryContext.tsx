@@ -18,6 +18,7 @@ export interface InventoryItem {
 interface InventoryContextType {
   inventory: Record<string, InventoryItem[]>;
   addItem: (item: Omit<InventoryItem, 'id' | 'createdAt'>) => Promise<void>;
+  updateItem: (itemId: number, updates: Partial<InventoryItem>) => Promise<void>;
   deleteItem: (categoryId: string, itemId: number) => Promise<void>;
   getExpiredItems: () => InventoryItem[];
   isLoading: boolean;
@@ -65,6 +66,16 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  const updateMutation = useMutation({
+    mutationFn: async ({ itemId, updates }: { itemId: number; updates: Partial<InventoryItem> }) => {
+      await apiRequest('PATCH', `/api/inventory/${itemId}`, updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/inventory/expired'] });
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: async (itemId: number) => {
       await apiRequest('DELETE', `/api/inventory/${itemId}`);
@@ -79,6 +90,10 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
     await addMutation.mutateAsync(item);
   };
 
+  const updateItem = async (itemId: number, updates: Partial<InventoryItem>) => {
+    await updateMutation.mutateAsync({ itemId, updates });
+  };
+
   const deleteItem = async (_categoryId: string, itemId: number) => {
     await deleteMutation.mutateAsync(itemId);
   };
@@ -86,7 +101,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
   const getExpiredItems = () => expiredItems;
 
   return (
-    <InventoryContext.Provider value={{ inventory, addItem, deleteItem, getExpiredItems, isLoading, expiredItems }}>
+    <InventoryContext.Provider value={{ inventory, addItem, updateItem, deleteItem, getExpiredItems, isLoading, expiredItems }}>
       {children}
     </InventoryContext.Provider>
   );

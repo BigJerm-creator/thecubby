@@ -389,6 +389,19 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/inventory/:id", isAuthenticated, async (req, res) => {
+    try {
+      const item = await storage.updateInventoryItem(parseInt(req.params.id), req.body);
+      if (!item) {
+        return res.status(404).json({ error: "Item not found" });
+      }
+      res.json(item);
+    } catch (error) {
+      console.error("Error updating inventory item:", error);
+      res.status(500).json({ error: "Failed to update item" });
+    }
+  });
+
   app.delete("/api/inventory/:id", isAuthenticated, async (req, res) => {
     try {
       await storage.deleteInventoryItem(parseInt(req.params.id));

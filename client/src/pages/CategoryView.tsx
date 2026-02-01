@@ -1,21 +1,23 @@
 import Layout from "@/components/layout";
 import { Link, useRoute, useLocation } from "wouter";
 import { KITCHEN_CATEGORIES } from "@/lib/mockData";
-import { ArrowLeft, Plus, Filter, MoreHorizontal, Calendar, Trash2, ShoppingCart, Loader2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { ArrowLeft, Plus, Filter, MoreHorizontal, Calendar, Trash2, ShoppingCart, Loader2, ArrowRightLeft, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useInventory } from "@/lib/InventoryContext";
 import { useShoppingList } from "@/lib/ShoppingListContext";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 export default function CategoryView() {
   const [match, params] = useRoute("/category/:id");
   const [, setLocation] = useLocation();
   const categoryId = params?.id || "";
   const category = KITCHEN_CATEGORIES.find(c => c.id === categoryId);
-  const { inventory, deleteItem, isLoading } = useInventory();
+  const { inventory, deleteItem, updateItem, isLoading } = useInventory();
   const { addItem: addToShoppingList } = useShoppingList();
   const { toast } = useToast();
   const items = inventory[categoryId] || [];
+  const [movingItem, setMovingItem] = useState<{ id: number; name: string } | null>(null);
 
   const handleDeleteItem = async (itemId: number) => {
     await deleteItem(categoryId, itemId);
@@ -23,6 +25,17 @@ export default function CategoryView() {
       title: "Item Removed",
       description: "Item has been deleted from inventory"
     });
+  };
+
+  const handleMoveItem = async (newCategory: string) => {
+    if (!movingItem) return;
+    const targetCategory = KITCHEN_CATEGORIES.find(c => c.id === newCategory);
+    await updateItem(movingItem.id, { category: newCategory });
+    toast({
+      title: "Item Moved",
+      description: `${movingItem.name} moved to ${targetCategory?.name || newCategory}`
+    });
+    setMovingItem(null);
   };
 
   const handleAddToShoppingList = async (itemName: string) => {
@@ -118,6 +131,15 @@ export default function CategoryView() {
                   </div>
                   
                   <button 
+                    onClick={() => setMovingItem({ id: item.id, name: item.name })}
+                    className="h-8 w-8 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 hover:bg-purple-600 hover:text-purple-50 transition-colors"
+                    data-testid={`button-move-item-${item.id}`}
+                    title="Move to another category"
+                  >
+                    <ArrowRightLeft size={16} />
+                  </button>
+                  
+                  <button 
                     onClick={() => handleAddToShoppingList(item.name)}
                     className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 hover:bg-blue-600 hover:text-blue-50 transition-colors"
                     data-testid={`button-add-to-shopping-list-${item.id}`}
@@ -149,6 +171,55 @@ export default function CategoryView() {
           <Plus size={24} />
         </button>
       </div>
+
+      <AnimatePresence>
+        {movingItem && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center pb-safe"
+            onClick={() => setMovingItem(null)}
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="bg-card rounded-t-3xl w-full max-w-lg max-h-[70vh] overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-4 border-b border-border flex items-center justify-between">
+                <h3 className="font-serif text-lg font-medium text-foreground">
+                  Move "{movingItem.name}"
+                </h3>
+                <button
+                  onClick={() => setMovingItem(null)}
+                  className="p-2 -mr-2 hover:bg-muted rounded-full transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="p-4 overflow-y-auto max-h-[calc(70vh-80px)]">
+                <p className="text-sm text-muted-foreground mb-4">Select a new category:</p>
+                <div className="grid grid-cols-3 gap-3">
+                  {KITCHEN_CATEGORIES.filter(c => c.id !== categoryId).map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => handleMoveItem(cat.id)}
+                      className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-colors"
+                      data-testid={`button-move-to-${cat.id}`}
+                    >
+                      <span className="text-2xl">{cat.icon}</span>
+                      <span className="text-xs text-center font-medium text-foreground">{cat.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </Layout>
   );
 }

@@ -20,6 +20,7 @@ export interface IStorage {
   getInventoryItemsByCategory(category: string): Promise<InventoryItem[]>;
   getExpiredItems(): Promise<InventoryItem[]>;
   createInventoryItem(item: InsertInventoryItem): Promise<InventoryItem>;
+  updateInventoryItem(id: number, updates: Partial<InsertInventoryItem>): Promise<InventoryItem | undefined>;
   deleteInventoryItem(id: number): Promise<void>;
   
   getShoppingListItems(): Promise<ShoppingListItem[]>;
@@ -83,6 +84,11 @@ export class DatabaseStorage implements IStorage {
   async createInventoryItem(item: InsertInventoryItem): Promise<InventoryItem> {
     const [inventoryItem] = await db.insert(inventoryItems).values(item).returning();
     return inventoryItem;
+  }
+
+  async updateInventoryItem(id: number, updates: Partial<InsertInventoryItem>): Promise<InventoryItem | undefined> {
+    const [updated] = await db.update(inventoryItems).set(updates).where(eq(inventoryItems.id, id)).returning();
+    return updated || undefined;
   }
 
   async deleteInventoryItem(id: number): Promise<void> {
