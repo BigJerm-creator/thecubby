@@ -67,19 +67,7 @@ export default function Home() {
       <div className="space-y-8">
         <header className="pt-6">
           <div className="flex items-center justify-between mb-4">
-            {user?.profileImageUrl ? (
-              <img 
-                src={user.profileImageUrl} 
-                alt="Profile" 
-                className="w-10 h-10 rounded-full object-cover border-2 border-primary/20"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-primary font-semibold text-lg">
-                  {displayName.charAt(0).toUpperCase()}
-                </span>
-              </div>
-            )}
+            <img src={logo} alt="The Cubby" className="h-10 w-auto" />
             <a 
               href="/api/logout" 
               className="p-2 text-muted-foreground hover:text-foreground transition-colors"
@@ -89,7 +77,6 @@ export default function Home() {
             </a>
           </div>
           <div className="text-center">
-            <img src={logo} alt="The Cubby" className="h-16 mx-auto mb-3" />
             <h1 className="text-4xl font-serif text-foreground leading-tight">
               Hello,<br />
               <span className="text-primary">{displayName}.</span>
