@@ -67,7 +67,7 @@ export default function Home() {
       <div className="space-y-8">
         <header className="pt-6">
           <div className="flex items-center justify-between mb-4">
-            <img src={logo} alt="The Cubby" className="h-10 w-auto" />
+            <img src={logo} alt="The Cubby" className="h-14 w-auto rounded-xl" />
             <a 
               href="/api/logout" 
               className="p-2 text-muted-foreground hover:text-foreground transition-colors"
