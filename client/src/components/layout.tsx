@@ -3,7 +3,6 @@ import { useLocation, Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/lib/ThemeContext";
 import { getIconStyleConfig } from "./StyledIcon";
-import logo from "@/assets/logo.png";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
@@ -24,15 +23,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         className="absolute inset-0 pointer-events-none z-0 transition-all duration-300 bg-cover bg-center bg-no-repeat opacity-40"
         style={{ backgroundImage: 'var(--holiday-background, none)' }}
       />
-      
-      {/* Header with Logo */}
-      <header className="relative z-20 px-4 pt-4 pb-2 flex items-center">
-        <Link href="/">
-          <img src={logo} alt="The Cubby" className="h-10 w-auto cursor-pointer" />
-        </Link>
-      </header>
 
-      <main className="flex-1 overflow-y-auto pb-24 px-4 scrollbar-hide relative z-10">
+      <main className="flex-1 overflow-y-auto pb-24 px-4 pt-6 scrollbar-hide relative z-10">
         {children}
       </main>
 
