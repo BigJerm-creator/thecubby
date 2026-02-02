@@ -10,6 +10,7 @@ import type { MealPlan, Recipe } from "@shared/schema";
 import { useTheme } from "@/lib/ThemeContext";
 import { getIconStyleConfig } from "@/components/StyledIcon";
 import { cn } from "@/lib/utils";
+import logo from "@/assets/logo.png";
 
 const mealTypeEmojis: Record<string, string> = {
   breakfast: "☕",
@@ -88,7 +89,7 @@ export default function Home() {
             </a>
           </div>
           <div className="text-center">
-            <span className="text-xs font-bold tracking-[0.2em] text-muted-foreground uppercase mb-2 block">The Cubby</span>
+            <img src={logo} alt="The Cubby" className="h-16 mx-auto mb-3" />
             <h1 className="text-4xl font-serif text-foreground leading-tight">
               Hello,<br />
               <span className="text-primary">{displayName}.</span>
