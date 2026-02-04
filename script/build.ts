@@ -32,6 +32,11 @@ const allowlist = [
   "zod-validation-error",
 ];
 
+// Modules that must be external due to dynamic requires or native bindings
+const forceExternal = [
+  "pdf-parse",
+];
+
 async function buildAll() {
   await rm("dist", { recursive: true, force: true });
 
@@ -44,7 +49,10 @@ async function buildAll() {
     ...Object.keys(pkg.dependencies || {}),
     ...Object.keys(pkg.devDependencies || {}),
   ];
-  const externals = allDeps.filter((dep) => !allowlist.includes(dep));
+  const externals = [
+    ...allDeps.filter((dep) => !allowlist.includes(dep)),
+    ...forceExternal,
+  ];
 
   await esbuild({
     entryPoints: ["server/index.ts"],
@@ -54,6 +62,14 @@ async function buildAll() {
     outfile: "dist/index.cjs",
     define: {
       "process.env.NODE_ENV": '"production"',
+    },
+    banner: {
+      js: `
+const { createRequire } = require("module");
+const { fileURLToPath } = require("url");
+const __filename = typeof __filename !== "undefined" ? __filename : "";
+const __dirname = typeof __dirname !== "undefined" ? __dirname : require("path").dirname(__filename);
+`,
     },
     minify: true,
     external: externals,

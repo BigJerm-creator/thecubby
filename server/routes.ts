@@ -5,9 +5,8 @@ import { insertInventoryItemSchema, insertShoppingListItemSchema, insertUserProf
 import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 import OpenAI from "openai";
 import multer from "multer";
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse");
+// @ts-ignore - pdf-parse uses CommonJS
+import pdfParse from "pdf-parse";
 
 const upload = multer({ storage: multer.memoryStorage() });
 
