@@ -16,40 +16,40 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   
-  getInventoryItems(): Promise<InventoryItem[]>;
-  getInventoryItemsByCategory(category: string): Promise<InventoryItem[]>;
-  getExpiredItems(): Promise<InventoryItem[]>;
-  createInventoryItem(item: InsertInventoryItem): Promise<InventoryItem>;
-  updateInventoryItem(id: number, updates: Partial<InsertInventoryItem>): Promise<InventoryItem | undefined>;
-  deleteInventoryItem(id: number): Promise<void>;
+  getInventoryItems(userId: string): Promise<InventoryItem[]>;
+  getInventoryItemsByCategory(userId: string, category: string): Promise<InventoryItem[]>;
+  getExpiredItems(userId: string): Promise<InventoryItem[]>;
+  createInventoryItem(userId: string, item: InsertInventoryItem): Promise<InventoryItem>;
+  updateInventoryItem(userId: string, id: number, updates: Partial<InsertInventoryItem>): Promise<InventoryItem | undefined>;
+  deleteInventoryItem(userId: string, id: number): Promise<void>;
   
-  getShoppingListItems(): Promise<ShoppingListItem[]>;
-  createShoppingListItem(item: InsertShoppingListItem): Promise<ShoppingListItem>;
-  updateShoppingListItem(id: number, checked: boolean): Promise<ShoppingListItem | undefined>;
-  deleteShoppingListItem(id: number): Promise<void>;
+  getShoppingListItems(userId: string): Promise<ShoppingListItem[]>;
+  createShoppingListItem(userId: string, item: InsertShoppingListItem): Promise<ShoppingListItem>;
+  updateShoppingListItem(userId: string, id: number, checked: boolean): Promise<ShoppingListItem | undefined>;
+  deleteShoppingListItem(userId: string, id: number): Promise<void>;
   
-  getConversation(id: number): Promise<Conversation | undefined>;
-  getAllConversations(): Promise<Conversation[]>;
-  createConversation(title: string): Promise<Conversation>;
-  deleteConversation(id: number): Promise<void>;
+  getConversation(userId: string, id: number): Promise<Conversation | undefined>;
+  getAllConversations(userId: string): Promise<Conversation[]>;
+  createConversation(userId: string, title: string): Promise<Conversation>;
+  deleteConversation(userId: string, id: number): Promise<void>;
   getMessagesByConversation(conversationId: number): Promise<Message[]>;
   createMessage(conversationId: number, role: string, content: string): Promise<Message>;
   
-  getUserProfile(): Promise<UserProfile | undefined>;
-  upsertUserProfile(profile: InsertUserProfile): Promise<UserProfile>;
+  getUserProfile(userId: string): Promise<UserProfile | undefined>;
+  upsertUserProfile(userId: string, profile: InsertUserProfile): Promise<UserProfile>;
   
-  getRecipes(): Promise<Recipe[]>;
-  getRecipe(id: number): Promise<Recipe | undefined>;
-  createRecipe(recipe: InsertRecipe): Promise<Recipe>;
-  updateRecipe(id: number, recipe: Partial<InsertRecipe>): Promise<Recipe | undefined>;
-  deleteRecipe(id: number): Promise<void>;
+  getRecipes(userId: string): Promise<Recipe[]>;
+  getRecipe(userId: string, id: number): Promise<Recipe | undefined>;
+  createRecipe(userId: string, recipe: InsertRecipe): Promise<Recipe>;
+  updateRecipe(userId: string, id: number, recipe: Partial<InsertRecipe>): Promise<Recipe | undefined>;
+  deleteRecipe(userId: string, id: number): Promise<void>;
   
-  getMealPlans(): Promise<MealPlan[]>;
-  getMealPlansByDateRange(startDate: string, endDate: string): Promise<MealPlan[]>;
-  getMealPlansByDate(date: string): Promise<MealPlan[]>;
-  createMealPlan(mealPlan: InsertMealPlan): Promise<MealPlan>;
-  updateMealPlan(id: number, mealPlan: Partial<InsertMealPlan>): Promise<MealPlan | undefined>;
-  deleteMealPlan(id: number): Promise<void>;
+  getMealPlans(userId: string): Promise<MealPlan[]>;
+  getMealPlansByDateRange(userId: string, startDate: string, endDate: string): Promise<MealPlan[]>;
+  getMealPlansByDate(userId: string, date: string): Promise<MealPlan[]>;
+  createMealPlan(userId: string, mealPlan: InsertMealPlan): Promise<MealPlan>;
+  updateMealPlan(userId: string, id: number, mealPlan: Partial<InsertMealPlan>): Promise<MealPlan | undefined>;
+  deleteMealPlan(userId: string, id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -68,68 +68,80 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async getInventoryItems(): Promise<InventoryItem[]> {
-    return db.select().from(inventoryItems).orderBy(desc(inventoryItems.createdAt));
+  async getInventoryItems(userId: string): Promise<InventoryItem[]> {
+    return db.select().from(inventoryItems).where(eq(inventoryItems.userId, userId)).orderBy(desc(inventoryItems.createdAt));
   }
 
-  async getInventoryItemsByCategory(category: string): Promise<InventoryItem[]> {
-    return db.select().from(inventoryItems).where(eq(inventoryItems.category, category)).orderBy(desc(inventoryItems.createdAt));
+  async getInventoryItemsByCategory(userId: string, category: string): Promise<InventoryItem[]> {
+    return db.select().from(inventoryItems)
+      .where(and(eq(inventoryItems.userId, userId), eq(inventoryItems.category, category)))
+      .orderBy(desc(inventoryItems.createdAt));
   }
 
-  async getExpiredItems(): Promise<InventoryItem[]> {
+  async getExpiredItems(userId: string): Promise<InventoryItem[]> {
     const today = new Date().toISOString().split('T')[0];
-    return db.select().from(inventoryItems).where(lt(inventoryItems.expiryDate, today)).orderBy(inventoryItems.expiryDate);
+    return db.select().from(inventoryItems)
+      .where(and(eq(inventoryItems.userId, userId), lt(inventoryItems.expiryDate, today)))
+      .orderBy(inventoryItems.expiryDate);
   }
 
-  async createInventoryItem(item: InsertInventoryItem): Promise<InventoryItem> {
-    const [inventoryItem] = await db.insert(inventoryItems).values(item).returning();
+  async createInventoryItem(userId: string, item: InsertInventoryItem): Promise<InventoryItem> {
+    const [inventoryItem] = await db.insert(inventoryItems).values({ ...item, userId }).returning();
     return inventoryItem;
   }
 
-  async updateInventoryItem(id: number, updates: Partial<InsertInventoryItem>): Promise<InventoryItem | undefined> {
-    const [updated] = await db.update(inventoryItems).set(updates).where(eq(inventoryItems.id, id)).returning();
+  async updateInventoryItem(userId: string, id: number, updates: Partial<InsertInventoryItem>): Promise<InventoryItem | undefined> {
+    const [updated] = await db.update(inventoryItems).set(updates)
+      .where(and(eq(inventoryItems.id, id), eq(inventoryItems.userId, userId)))
+      .returning();
     return updated || undefined;
   }
 
-  async deleteInventoryItem(id: number): Promise<void> {
-    await db.delete(inventoryItems).where(eq(inventoryItems.id, id));
+  async deleteInventoryItem(userId: string, id: number): Promise<void> {
+    await db.delete(inventoryItems).where(and(eq(inventoryItems.id, id), eq(inventoryItems.userId, userId)));
   }
 
-  async getShoppingListItems(): Promise<ShoppingListItem[]> {
-    return db.select().from(shoppingListItems).orderBy(desc(shoppingListItems.createdAt));
+  async getShoppingListItems(userId: string): Promise<ShoppingListItem[]> {
+    return db.select().from(shoppingListItems).where(eq(shoppingListItems.userId, userId)).orderBy(desc(shoppingListItems.createdAt));
   }
 
-  async createShoppingListItem(item: InsertShoppingListItem): Promise<ShoppingListItem> {
-    const [shoppingItem] = await db.insert(shoppingListItems).values(item).returning();
+  async createShoppingListItem(userId: string, item: InsertShoppingListItem): Promise<ShoppingListItem> {
+    const [shoppingItem] = await db.insert(shoppingListItems).values({ ...item, userId }).returning();
     return shoppingItem;
   }
 
-  async updateShoppingListItem(id: number, checked: boolean): Promise<ShoppingListItem | undefined> {
-    const [updated] = await db.update(shoppingListItems).set({ checked }).where(eq(shoppingListItems.id, id)).returning();
+  async updateShoppingListItem(userId: string, id: number, checked: boolean): Promise<ShoppingListItem | undefined> {
+    const [updated] = await db.update(shoppingListItems).set({ checked })
+      .where(and(eq(shoppingListItems.id, id), eq(shoppingListItems.userId, userId)))
+      .returning();
     return updated;
   }
 
-  async deleteShoppingListItem(id: number): Promise<void> {
-    await db.delete(shoppingListItems).where(eq(shoppingListItems.id, id));
+  async deleteShoppingListItem(userId: string, id: number): Promise<void> {
+    await db.delete(shoppingListItems).where(and(eq(shoppingListItems.id, id), eq(shoppingListItems.userId, userId)));
   }
 
-  async getConversation(id: number): Promise<Conversation | undefined> {
-    const [conversation] = await db.select().from(conversations).where(eq(conversations.id, id));
+  async getConversation(userId: string, id: number): Promise<Conversation | undefined> {
+    const [conversation] = await db.select().from(conversations)
+      .where(and(eq(conversations.id, id), eq(conversations.userId, userId)));
     return conversation;
   }
 
-  async getAllConversations(): Promise<Conversation[]> {
-    return db.select().from(conversations).orderBy(desc(conversations.createdAt));
+  async getAllConversations(userId: string): Promise<Conversation[]> {
+    return db.select().from(conversations).where(eq(conversations.userId, userId)).orderBy(desc(conversations.createdAt));
   }
 
-  async createConversation(title: string): Promise<Conversation> {
-    const [conversation] = await db.insert(conversations).values({ title }).returning();
+  async createConversation(userId: string, title: string): Promise<Conversation> {
+    const [conversation] = await db.insert(conversations).values({ title, userId }).returning();
     return conversation;
   }
 
-  async deleteConversation(id: number): Promise<void> {
-    await db.delete(messages).where(eq(messages.conversationId, id));
-    await db.delete(conversations).where(eq(conversations.id, id));
+  async deleteConversation(userId: string, id: number): Promise<void> {
+    const conversation = await this.getConversation(userId, id);
+    if (conversation) {
+      await db.delete(messages).where(eq(messages.conversationId, id));
+      await db.delete(conversations).where(and(eq(conversations.id, id), eq(conversations.userId, userId)));
+    }
   }
 
   async getMessagesByConversation(conversationId: number): Promise<Message[]> {
@@ -141,77 +153,81 @@ export class DatabaseStorage implements IStorage {
     return message;
   }
 
-  async getUserProfile(): Promise<UserProfile | undefined> {
-    const [profile] = await db.select().from(userProfiles).limit(1);
+  async getUserProfile(userId: string): Promise<UserProfile | undefined> {
+    const [profile] = await db.select().from(userProfiles).where(eq(userProfiles.userId, userId)).limit(1);
     return profile;
   }
 
-  async upsertUserProfile(profile: InsertUserProfile): Promise<UserProfile> {
-    const existing = await this.getUserProfile();
+  async upsertUserProfile(userId: string, profile: InsertUserProfile): Promise<UserProfile> {
+    const existing = await this.getUserProfile(userId);
     if (existing) {
       const [updated] = await db.update(userProfiles)
         .set({ ...profile, updatedAt: new Date() })
-        .where(eq(userProfiles.id, existing.id))
+        .where(eq(userProfiles.userId, userId))
         .returning();
       return updated;
     } else {
-      const [created] = await db.insert(userProfiles).values(profile).returning();
+      const [created] = await db.insert(userProfiles).values({ ...profile, userId }).returning();
       return created;
     }
   }
 
-  async getRecipes(): Promise<Recipe[]> {
-    return db.select().from(recipes).orderBy(desc(recipes.createdAt));
+  async getRecipes(userId: string): Promise<Recipe[]> {
+    return db.select().from(recipes).where(eq(recipes.userId, userId)).orderBy(desc(recipes.createdAt));
   }
 
-  async getRecipe(id: number): Promise<Recipe | undefined> {
-    const [recipe] = await db.select().from(recipes).where(eq(recipes.id, id));
+  async getRecipe(userId: string, id: number): Promise<Recipe | undefined> {
+    const [recipe] = await db.select().from(recipes)
+      .where(and(eq(recipes.id, id), eq(recipes.userId, userId)));
     return recipe;
   }
 
-  async createRecipe(recipe: InsertRecipe): Promise<Recipe> {
-    const [created] = await db.insert(recipes).values(recipe).returning();
+  async createRecipe(userId: string, recipe: InsertRecipe): Promise<Recipe> {
+    const [created] = await db.insert(recipes).values({ ...recipe, userId }).returning();
     return created;
   }
 
-  async updateRecipe(id: number, recipe: Partial<InsertRecipe>): Promise<Recipe | undefined> {
+  async updateRecipe(userId: string, id: number, recipe: Partial<InsertRecipe>): Promise<Recipe | undefined> {
     const [updated] = await db.update(recipes)
       .set({ ...recipe, updatedAt: new Date() })
-      .where(eq(recipes.id, id))
+      .where(and(eq(recipes.id, id), eq(recipes.userId, userId)))
       .returning();
     return updated;
   }
 
-  async deleteRecipe(id: number): Promise<void> {
-    await db.delete(recipes).where(eq(recipes.id, id));
+  async deleteRecipe(userId: string, id: number): Promise<void> {
+    await db.delete(recipes).where(and(eq(recipes.id, id), eq(recipes.userId, userId)));
   }
 
-  async getMealPlans(): Promise<MealPlan[]> {
-    return db.select().from(mealPlans).orderBy(mealPlans.date);
+  async getMealPlans(userId: string): Promise<MealPlan[]> {
+    return db.select().from(mealPlans).where(eq(mealPlans.userId, userId)).orderBy(mealPlans.date);
   }
 
-  async getMealPlansByDateRange(startDate: string, endDate: string): Promise<MealPlan[]> {
+  async getMealPlansByDateRange(userId: string, startDate: string, endDate: string): Promise<MealPlan[]> {
     return db.select().from(mealPlans)
-      .where(and(gte(mealPlans.date, startDate), lte(mealPlans.date, endDate)))
+      .where(and(eq(mealPlans.userId, userId), gte(mealPlans.date, startDate), lte(mealPlans.date, endDate)))
       .orderBy(mealPlans.date);
   }
 
-  async getMealPlansByDate(date: string): Promise<MealPlan[]> {
-    return db.select().from(mealPlans).where(eq(mealPlans.date, date));
+  async getMealPlansByDate(userId: string, date: string): Promise<MealPlan[]> {
+    return db.select().from(mealPlans)
+      .where(and(eq(mealPlans.userId, userId), eq(mealPlans.date, date)));
   }
 
-  async createMealPlan(mealPlan: InsertMealPlan): Promise<MealPlan> {
-    const [created] = await db.insert(mealPlans).values(mealPlan).returning();
+  async createMealPlan(userId: string, mealPlan: InsertMealPlan): Promise<MealPlan> {
+    const [created] = await db.insert(mealPlans).values({ ...mealPlan, userId }).returning();
     return created;
   }
 
-  async updateMealPlan(id: number, mealPlan: Partial<InsertMealPlan>): Promise<MealPlan | undefined> {
-    const [updated] = await db.update(mealPlans).set(mealPlan).where(eq(mealPlans.id, id)).returning();
+  async updateMealPlan(userId: string, id: number, mealPlan: Partial<InsertMealPlan>): Promise<MealPlan | undefined> {
+    const [updated] = await db.update(mealPlans).set(mealPlan)
+      .where(and(eq(mealPlans.id, id), eq(mealPlans.userId, userId)))
+      .returning();
     return updated;
   }
 
-  async deleteMealPlan(id: number): Promise<void> {
-    await db.delete(mealPlans).where(eq(mealPlans.id, id));
+  async deleteMealPlan(userId: string, id: number): Promise<void> {
+    await db.delete(mealPlans).where(and(eq(mealPlans.id, id), eq(mealPlans.userId, userId)));
   }
 }
 

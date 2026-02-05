@@ -7,6 +7,7 @@ export * from "./models/auth";
 
 export const inventoryItems = pgTable("inventory_items", {
   id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
   name: text("name").notNull(),
   brand: text("brand"),
   amount: doublePrecision("amount"),
@@ -28,6 +29,7 @@ export const insertInventoryItemSchema = createInsertSchema(inventoryItems, {
   imageUrl: z.string().nullable().optional(),
 }).omit({
   id: true,
+  userId: true,
   createdAt: true,
 });
 
@@ -36,6 +38,7 @@ export type InventoryItem = typeof inventoryItems.$inferSelect;
 
 export const shoppingListItems = pgTable("shopping_list_items", {
   id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
   name: text("name").notNull(),
   category: text("category").notNull(),
   checked: boolean("checked").notNull().default(false),
@@ -44,6 +47,7 @@ export const shoppingListItems = pgTable("shopping_list_items", {
 
 export const insertShoppingListItemSchema = createInsertSchema(shoppingListItems).omit({
   id: true,
+  userId: true,
   createdAt: true,
   checked: true,
 });
@@ -53,6 +57,7 @@ export type ShoppingListItem = typeof shoppingListItems.$inferSelect;
 
 export const conversations = pgTable("conversations", {
   id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
   title: text("title").notNull(),
   createdAt: timestamp("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
@@ -67,6 +72,7 @@ export const messages = pgTable("messages", {
 
 export const insertConversationSchema = createInsertSchema(conversations).omit({
   id: true,
+  userId: true,
   createdAt: true,
 });
 
@@ -82,6 +88,7 @@ export type InsertMessage = z.infer<typeof insertMessageSchema>;
 
 export const userProfiles = pgTable("user_profiles", {
   id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().unique(),
   name: text("name"),
   dateOfBirth: text("date_of_birth"),
   height: doublePrecision("height"),
@@ -113,6 +120,7 @@ export const insertUserProfileSchema = createInsertSchema(userProfiles, {
   background: z.string().nullable().optional(),
 }).omit({
   id: true,
+  userId: true,
   createdAt: true,
   updatedAt: true,
 });
@@ -122,6 +130,7 @@ export type UserProfile = typeof userProfiles.$inferSelect;
 
 export const recipes = pgTable("recipes", {
   id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
   title: text("title").notNull(),
   description: text("description"),
   ingredients: text("ingredients").array(),
@@ -148,6 +157,7 @@ export const insertRecipeSchema = createInsertSchema(recipes, {
   isFavorite: z.boolean().optional(),
 }).omit({
   id: true,
+  userId: true,
   createdAt: true,
   updatedAt: true,
 });
@@ -157,6 +167,7 @@ export type Recipe = typeof recipes.$inferSelect;
 
 export const mealPlans = pgTable("meal_plans", {
   id: serial("id").primaryKey(),
+  userId: text("user_id").notNull(),
   date: text("date").notNull(),
   mealType: text("meal_type").notNull(),
   recipeId: integer("recipe_id"),
@@ -171,6 +182,7 @@ export const insertMealPlanSchema = createInsertSchema(mealPlans, {
   notes: z.string().nullable().optional(),
 }).omit({
   id: true,
+  userId: true,
   createdAt: true,
 });
 

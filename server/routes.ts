@@ -347,7 +347,8 @@ export async function registerRoutes(
 
   app.get("/api/inventory", isAuthenticated, async (req, res) => {
     try {
-      const items = await storage.getInventoryItems();
+      const userId = (req.user as any).claims.sub;
+      const items = await storage.getInventoryItems(userId);
       res.json(items);
     } catch (error) {
       console.error("Error fetching inventory:", error);
@@ -357,7 +358,8 @@ export async function registerRoutes(
 
   app.get("/api/inventory/category/:category", isAuthenticated, async (req, res) => {
     try {
-      const items = await storage.getInventoryItemsByCategory(req.params.category);
+      const userId = (req.user as any).claims.sub;
+      const items = await storage.getInventoryItemsByCategory(userId, req.params.category);
       res.json(items);
     } catch (error) {
       console.error("Error fetching category items:", error);
@@ -367,7 +369,8 @@ export async function registerRoutes(
 
   app.get("/api/inventory/expired", isAuthenticated, async (req, res) => {
     try {
-      const items = await storage.getExpiredItems();
+      const userId = (req.user as any).claims.sub;
+      const items = await storage.getExpiredItems(userId);
       res.json(items);
     } catch (error) {
       console.error("Error fetching expired items:", error);
@@ -377,11 +380,12 @@ export async function registerRoutes(
 
   app.post("/api/inventory", isAuthenticated, async (req, res) => {
     try {
+      const userId = (req.user as any).claims.sub;
       const parsed = insertInventoryItemSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ error: parsed.error.message });
       }
-      const item = await storage.createInventoryItem(parsed.data);
+      const item = await storage.createInventoryItem(userId, parsed.data);
       res.status(201).json(item);
     } catch (error) {
       console.error("Error creating inventory item:", error);
@@ -391,7 +395,8 @@ export async function registerRoutes(
 
   app.patch("/api/inventory/:id", isAuthenticated, async (req, res) => {
     try {
-      const item = await storage.updateInventoryItem(parseInt(req.params.id), req.body);
+      const userId = (req.user as any).claims.sub;
+      const item = await storage.updateInventoryItem(userId, parseInt(req.params.id), req.body);
       if (!item) {
         return res.status(404).json({ error: "Item not found" });
       }
@@ -404,7 +409,8 @@ export async function registerRoutes(
 
   app.delete("/api/inventory/:id", isAuthenticated, async (req, res) => {
     try {
-      await storage.deleteInventoryItem(parseInt(req.params.id));
+      const userId = (req.user as any).claims.sub;
+      await storage.deleteInventoryItem(userId, parseInt(req.params.id));
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting inventory item:", error);
@@ -414,7 +420,8 @@ export async function registerRoutes(
 
   app.get("/api/shopping-list", isAuthenticated, async (req, res) => {
     try {
-      const items = await storage.getShoppingListItems();
+      const userId = (req.user as any).claims.sub;
+      const items = await storage.getShoppingListItems(userId);
       res.json(items);
     } catch (error) {
       console.error("Error fetching shopping list:", error);
@@ -424,11 +431,12 @@ export async function registerRoutes(
 
   app.post("/api/shopping-list", isAuthenticated, async (req, res) => {
     try {
+      const userId = (req.user as any).claims.sub;
       const parsed = insertShoppingListItemSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ error: parsed.error.message });
       }
-      const item = await storage.createShoppingListItem(parsed.data);
+      const item = await storage.createShoppingListItem(userId, parsed.data);
       res.status(201).json(item);
     } catch (error) {
       console.error("Error creating shopping list item:", error);
@@ -438,8 +446,9 @@ export async function registerRoutes(
 
   app.patch("/api/shopping-list/:id", isAuthenticated, async (req, res) => {
     try {
+      const userId = (req.user as any).claims.sub;
       const { checked } = req.body;
-      const item = await storage.updateShoppingListItem(parseInt(req.params.id), checked);
+      const item = await storage.updateShoppingListItem(userId, parseInt(req.params.id), checked);
       if (!item) {
         return res.status(404).json({ error: "Item not found" });
       }
@@ -452,7 +461,8 @@ export async function registerRoutes(
 
   app.delete("/api/shopping-list/:id", isAuthenticated, async (req, res) => {
     try {
-      await storage.deleteShoppingListItem(parseInt(req.params.id));
+      const userId = (req.user as any).claims.sub;
+      await storage.deleteShoppingListItem(userId, parseInt(req.params.id));
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting shopping list item:", error);
@@ -462,7 +472,8 @@ export async function registerRoutes(
 
   app.get("/api/profile", isAuthenticated, async (req, res) => {
     try {
-      const profile = await storage.getUserProfile();
+      const userId = (req.user as any).claims.sub;
+      const profile = await storage.getUserProfile(userId);
       res.json(profile || null);
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -472,11 +483,12 @@ export async function registerRoutes(
 
   app.post("/api/profile", isAuthenticated, async (req, res) => {
     try {
+      const userId = (req.user as any).claims.sub;
       const parsed = insertUserProfileSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ error: parsed.error.message });
       }
-      const profile = await storage.upsertUserProfile(parsed.data);
+      const profile = await storage.upsertUserProfile(userId, parsed.data);
       res.json(profile);
     } catch (error) {
       console.error("Error saving profile:", error);
@@ -486,8 +498,9 @@ export async function registerRoutes(
 
   app.post("/api/generate-recipe", isAuthenticated, async (req, res) => {
     try {
-      const items = await storage.getInventoryItems();
-      const profile = await storage.getUserProfile();
+      const userId = (req.user as any).claims.sub;
+      const items = await storage.getInventoryItems(userId);
+      const profile = await storage.getUserProfile(userId);
       const ingredientsList = items.map(item => {
         const amountStr = item.amount && item.amountUnit ? `${item.amount} ${item.amountUnit}` : '';
         const qtyStr = item.quantity > 1 ? `${item.quantity}x` : '';
@@ -553,7 +566,8 @@ export async function registerRoutes(
   // Recipe Book routes
   app.get("/api/recipes", isAuthenticated, async (req, res) => {
     try {
-      const recipes = await storage.getRecipes();
+      const userId = (req.user as any).claims.sub;
+      const recipes = await storage.getRecipes(userId);
       res.json(recipes);
     } catch (error) {
       console.error("Error fetching recipes:", error);
@@ -563,7 +577,8 @@ export async function registerRoutes(
 
   app.get("/api/recipes/:id", isAuthenticated, async (req, res) => {
     try {
-      const recipe = await storage.getRecipe(parseInt(req.params.id));
+      const userId = (req.user as any).claims.sub;
+      const recipe = await storage.getRecipe(userId, parseInt(req.params.id));
       if (!recipe) {
         return res.status(404).json({ error: "Recipe not found" });
       }
@@ -576,11 +591,12 @@ export async function registerRoutes(
 
   app.post("/api/recipes", isAuthenticated, async (req, res) => {
     try {
+      const userId = (req.user as any).claims.sub;
       const parsed = insertRecipeSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ error: parsed.error.message });
       }
-      const recipe = await storage.createRecipe(parsed.data);
+      const recipe = await storage.createRecipe(userId, parsed.data);
       res.status(201).json(recipe);
     } catch (error) {
       console.error("Error creating recipe:", error);
@@ -590,7 +606,8 @@ export async function registerRoutes(
 
   app.patch("/api/recipes/:id", isAuthenticated, async (req, res) => {
     try {
-      const recipe = await storage.updateRecipe(parseInt(req.params.id), req.body);
+      const userId = (req.user as any).claims.sub;
+      const recipe = await storage.updateRecipe(userId, parseInt(req.params.id), req.body);
       if (!recipe) {
         return res.status(404).json({ error: "Recipe not found" });
       }
@@ -603,7 +620,8 @@ export async function registerRoutes(
 
   app.delete("/api/recipes/:id", isAuthenticated, async (req, res) => {
     try {
-      await storage.deleteRecipe(parseInt(req.params.id));
+      const userId = (req.user as any).claims.sub;
+      await storage.deleteRecipe(userId, parseInt(req.params.id));
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting recipe:", error);
@@ -744,14 +762,15 @@ Only return the JSON object, no additional text or markdown.`
   // Meal Plan routes
   app.get("/api/meal-plans", isAuthenticated, async (req, res) => {
     try {
+      const userId = (req.user as any).claims.sub;
       const { startDate, endDate, date } = req.query;
       let plans;
       if (date) {
-        plans = await storage.getMealPlansByDate(date as string);
+        plans = await storage.getMealPlansByDate(userId, date as string);
       } else if (startDate && endDate) {
-        plans = await storage.getMealPlansByDateRange(startDate as string, endDate as string);
+        plans = await storage.getMealPlansByDateRange(userId, startDate as string, endDate as string);
       } else {
-        plans = await storage.getMealPlans();
+        plans = await storage.getMealPlans(userId);
       }
       res.json(plans);
     } catch (error) {
@@ -762,11 +781,12 @@ Only return the JSON object, no additional text or markdown.`
 
   app.post("/api/meal-plans", isAuthenticated, async (req, res) => {
     try {
+      const userId = (req.user as any).claims.sub;
       const parsed = insertMealPlanSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ error: parsed.error.message });
       }
-      const mealPlan = await storage.createMealPlan(parsed.data);
+      const mealPlan = await storage.createMealPlan(userId, parsed.data);
       res.status(201).json(mealPlan);
     } catch (error) {
       console.error("Error creating meal plan:", error);
@@ -776,7 +796,8 @@ Only return the JSON object, no additional text or markdown.`
 
   app.patch("/api/meal-plans/:id", isAuthenticated, async (req, res) => {
     try {
-      const mealPlan = await storage.updateMealPlan(parseInt(req.params.id), req.body);
+      const userId = (req.user as any).claims.sub;
+      const mealPlan = await storage.updateMealPlan(userId, parseInt(req.params.id), req.body);
       if (!mealPlan) {
         return res.status(404).json({ error: "Meal plan not found" });
       }
@@ -789,7 +810,8 @@ Only return the JSON object, no additional text or markdown.`
 
   app.delete("/api/meal-plans/:id", isAuthenticated, async (req, res) => {
     try {
-      await storage.deleteMealPlan(parseInt(req.params.id));
+      const userId = (req.user as any).claims.sub;
+      await storage.deleteMealPlan(userId, parseInt(req.params.id));
       res.status(204).send();
     } catch (error) {
       console.error("Error deleting meal plan:", error);
