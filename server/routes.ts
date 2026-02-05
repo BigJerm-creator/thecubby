@@ -6,7 +6,8 @@ import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integra
 import OpenAI from "openai";
 import multer from "multer";
 // @ts-ignore - pdf-parse uses CommonJS
-import pdfParse from "pdf-parse";
+import * as pdfParseModule from "pdf-parse";
+const pdfParse = (pdfParseModule as any).default || pdfParseModule;
 
 const upload = multer({ storage: multer.memoryStorage() });
 
