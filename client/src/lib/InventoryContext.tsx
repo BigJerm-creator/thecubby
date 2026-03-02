@@ -12,6 +12,7 @@ export interface InventoryItem {
   expiryDate?: string | null;
   category: string;
   barcode?: string | null;
+  imageUrl?: string | null;
   createdAt: string;
 }
 
