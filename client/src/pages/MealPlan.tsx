@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronLeft, ChevronRight, Plus, Trash2, CalendarDays, UtensilsCrossed, Coffee, Sun, Moon, Cookie, ArrowLeft, Sparkles, ShoppingCart, Check, Loader2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trash2, CalendarDays, UtensilsCrossed, Coffee, Sun, Moon, Cookie, ArrowLeft, Sparkles, ShoppingCart, Check, Loader2, X, RefreshCw } from "lucide-react";
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isToday, parseISO, addDays } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import type { MealPlan, Recipe } from "@shared/schema";
@@ -665,11 +665,17 @@ export default function MealPlan() {
                             setGeneratedPlan(null);
                             setSavedMeals(new Set());
                             setAddedShoppingItems(new Set());
+                            generateMealPlan.mutate();
                           }}
+                          disabled={generateMealPlan.isPending}
                           data-testid="button-regenerate"
                         >
-                          <Sparkles className="h-3 w-3" />
-                          New Plan
+                          {generateMealPlan.isPending ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <RefreshCw className="h-3 w-3" />
+                          )}
+                          Re-generate
                         </Button>
                         {generatedPlan.meals.some((_, i) => !savedMeals.has(i)) && (
                           <Button
