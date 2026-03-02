@@ -759,6 +759,116 @@ Only return the JSON object, no additional text or markdown.`
     }
   });
 
+  app.post("/api/generate-meal-plan", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).claims.sub;
+      const { days = 7, mealTypes = ["breakfast", "lunch", "dinner"], startDate } = req.body;
+
+      if (!startDate || typeof startDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+        return res.status(400).json({ error: "A valid startDate (YYYY-MM-DD) is required" });
+      }
+      if (!Number.isInteger(days) || days < 1 || days > 14) {
+        return res.status(400).json({ error: "Days must be between 1 and 14" });
+      }
+      const validMealTypes = ["breakfast", "lunch", "dinner", "snack"];
+      if (!Array.isArray(mealTypes) || mealTypes.length === 0 || !mealTypes.every((t: string) => validMealTypes.includes(t))) {
+        return res.status(400).json({ error: "Invalid meal types" });
+      }
+
+      const items = await storage.getInventoryItems(userId);
+      const profile = await storage.getUserProfile(userId);
+
+      if (items.length === 0) {
+        return res.status(400).json({ error: "No ingredients in your pantry. Add some items first!" });
+      }
+
+      const ingredientsList = items.map(item => {
+        const parts = [];
+        if (item.quantity > 1) parts.push(`${item.quantity}x`);
+        parts.push(item.name);
+        if (item.amount && item.amountUnit) parts.push(`(${item.amount} ${item.amountUnit})`);
+        if (item.brand) parts.push(`- ${item.brand}`);
+        return parts.join(' ');
+      }).join("\n");
+
+      let dietaryContext = "";
+      if (profile) {
+        const prefs = (profile as any).dietaryPreferences || [];
+        const restrictions = (profile as any).restrictions || [];
+        if (prefs.length > 0) dietaryContext += `Dietary preferences: ${prefs.join(", ")}. `;
+        if (restrictions.length > 0) dietaryContext += `Food restrictions (MUST AVOID): ${restrictions.join(", ")}. `;
+      }
+
+      const mealTypesStr = mealTypes.join(", ");
+
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are a helpful meal planning assistant. Generate a ${days}-day meal plan. ${dietaryContext}
+
+You MUST respond with valid JSON only (no markdown, no code fences). Use this exact structure:
+{
+  "meals": [
+    {
+      "day": 1,
+      "date": "YYYY-MM-DD",
+      "mealType": "breakfast|lunch|dinner|snack",
+      "name": "Meal name",
+      "description": "Brief description",
+      "ingredients": ["ingredient 1", "ingredient 2"]
+    }
+  ],
+  "shoppingList": [
+    {
+      "name": "Item name",
+      "category": "produce|meat|dairy|canned|frozen|boxed|spices|condiments|bakery|beverages|snacks|other"
+    }
+  ]
+}
+
+Rules:
+- Prioritize using ingredients the user already has in their pantry
+- For each meal, list the key ingredients needed
+- In "shoppingList", include ONLY items NOT found in the user's pantry that are needed for the meals
+- Do NOT include basic pantry staples (salt, pepper, water, oil) in the shopping list
+- Be practical and create realistic, achievable meals
+- Include ${mealTypesStr} for each day`
+          },
+          {
+            role: "user",
+            content: `Create a ${days}-day meal plan starting from ${startDate}. Here are the ingredients I currently have:\n\n${ingredientsList}\n\nGenerate meals that use these ingredients as much as possible, and list any additional items I'd need to buy.`
+          }
+        ],
+        response_format: { type: "json_object" },
+        max_tokens: 4000,
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
+        return res.status(500).json({ error: "No response from AI" });
+      }
+
+      const mealPlan = JSON.parse(content);
+
+      if (!Array.isArray(mealPlan.meals)) {
+        mealPlan.meals = [];
+      }
+      if (!Array.isArray(mealPlan.shoppingList)) {
+        mealPlan.shoppingList = [];
+      }
+
+      mealPlan.meals = mealPlan.meals.filter((m: any) => m && typeof m.name === "string" && typeof m.mealType === "string" && typeof m.date === "string");
+      mealPlan.shoppingList = mealPlan.shoppingList.filter((s: any) => s && typeof s.name === "string");
+
+      res.json(mealPlan);
+    } catch (error) {
+      console.error("Error generating meal plan:", error);
+      res.status(500).json({ error: "Failed to generate meal plan" });
+    }
+  });
+
   // Meal Plan routes
   app.get("/api/meal-plans", isAuthenticated, async (req, res) => {
     try {
