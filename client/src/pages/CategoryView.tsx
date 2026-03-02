@@ -21,29 +21,17 @@ export default function CategoryView() {
   const [removingItem, setRemovingItem] = useState<InventoryItem | null>(null);
   const [removeCount, setRemoveCount] = useState(1);
 
-  const isAmountBasedCategory = categoryId === 'spices';
+  const isSpices = categoryId === 'spices';
 
-  const getRemovableTotal = (item: InventoryItem) => {
-    if (isAmountBasedCategory && item.amount) {
-      return item.amount;
-    }
-    return item.quantity;
-  };
-
-  const getRemoveUnit = (item: InventoryItem) => {
-    if (isAmountBasedCategory && item.amount && item.amountUnit) {
-      return item.amountUnit;
-    }
-    return '';
-  };
-
-  const getRemoveStep = () => {
-    return isAmountBasedCategory ? 0.5 : 1;
+  const useAmountMode = (item: InventoryItem) => {
+    return isSpices && item.amount != null && item.amount > 0;
   };
 
   const handleDeleteItem = async (item: InventoryItem) => {
-    const total = getRemovableTotal(item);
-    if (total <= (isAmountBasedCategory ? 0 : 1)) {
+    if (useAmountMode(item)) {
+      setRemovingItem(item);
+      setRemoveCount(0.5);
+    } else if (item.quantity <= 1) {
       await deleteItem(categoryId, item.id);
       toast({
         title: "Item Removed",
@@ -51,32 +39,43 @@ export default function CategoryView() {
       });
     } else {
       setRemovingItem(item);
-      setRemoveCount(isAmountBasedCategory ? getRemoveStep() : 1);
+      setRemoveCount(1);
     }
   };
 
   const confirmRemove = async () => {
     if (!removingItem) return;
-    const total = getRemovableTotal(removingItem);
-    if (removeCount >= total) {
-      await deleteItem(categoryId, removingItem.id);
-      toast({
-        title: "Item Removed",
-        description: `${removingItem.name} has been removed from inventory`
-      });
-    } else if (isAmountBasedCategory && removingItem.amount) {
-      const newAmount = Math.round((removingItem.amount - removeCount) * 100) / 100;
-      await updateItem(removingItem.id, { amount: newAmount });
-      toast({
-        title: "Amount Updated",
-        description: `Removed ${removeCount} ${removingItem.amountUnit || 'oz'} of ${removingItem.name} (${newAmount} ${removingItem.amountUnit || 'oz'} remaining)`
-      });
+
+    if (useAmountMode(removingItem)) {
+      const currentAmount = removingItem.amount!;
+      if (removeCount >= currentAmount) {
+        await deleteItem(categoryId, removingItem.id);
+        toast({
+          title: "Item Removed",
+          description: `${removingItem.name} has been removed from inventory`
+        });
+      } else {
+        const newAmount = Math.round((currentAmount - removeCount) * 100) / 100;
+        await updateItem(removingItem.id, { amount: newAmount });
+        toast({
+          title: "Amount Updated",
+          description: `Removed ${removeCount} ${removingItem.amountUnit || 'oz'} of ${removingItem.name} (${newAmount} ${removingItem.amountUnit || 'oz'} remaining)`
+        });
+      }
     } else {
-      await updateItem(removingItem.id, { quantity: removingItem.quantity - removeCount });
-      toast({
-        title: "Quantity Updated",
-        description: `Removed ${removeCount} of ${removingItem.name} (${removingItem.quantity - removeCount} remaining)`
-      });
+      if (removeCount >= removingItem.quantity) {
+        await deleteItem(categoryId, removingItem.id);
+        toast({
+          title: "Item Removed",
+          description: `${removingItem.name} has been removed from inventory`
+        });
+      } else {
+        await updateItem(removingItem.id, { quantity: removingItem.quantity - removeCount });
+        toast({
+          title: "Quantity Updated",
+          description: `Removed ${removeCount} of ${removingItem.name} (${removingItem.quantity - removeCount} remaining)`
+        });
+      }
     }
     setRemovingItem(null);
   };
@@ -296,69 +295,77 @@ export default function CategoryView() {
               className="bg-card rounded-2xl w-full max-w-sm shadow-xl overflow-hidden"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="p-5 space-y-4">
-                <div className="text-center">
-                  <h3 className="font-serif text-xl font-medium text-foreground">
-                    Remove {removingItem.name}
-                  </h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {isAmountBasedCategory && removingItem.amount
-                      ? `You have ${removingItem.amount} ${removingItem.amountUnit || 'oz'} on hand. How much do you want to remove?`
-                      : `You have ${removingItem.quantity} in inventory. How many do you want to remove?`
-                    }
-                  </p>
-                </div>
+              {(() => {
+                const amountMode = useAmountMode(removingItem);
+                const total = amountMode ? removingItem.amount! : removingItem.quantity;
+                const unit = amountMode ? (removingItem.amountUnit || 'oz') : '';
+                const step = amountMode ? 0.5 : 1;
+                return (
+                  <div className="p-5 space-y-4">
+                    <div className="text-center">
+                      <h3 className="font-serif text-xl font-medium text-foreground">
+                        Remove {removingItem.name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {amountMode
+                          ? `You have ${total} ${unit} on hand. How much do you want to remove?`
+                          : `You have ${total} in inventory. How many do you want to remove?`
+                        }
+                      </p>
+                    </div>
 
-                <div className="flex items-center justify-center gap-4">
-                  <button
-                    onClick={() => setRemoveCount(Math.max(getRemoveStep(), Math.round((removeCount - getRemoveStep()) * 100) / 100))}
-                    className="h-10 w-10 rounded-full bg-muted flex items-center justify-center hover:bg-muted-foreground/20 transition-colors"
-                    data-testid="button-remove-decrease"
-                    disabled={removeCount <= getRemoveStep()}
-                  >
-                    <Minus size={18} />
-                  </button>
-                  <div className="text-center">
-                    <span className="text-3xl font-serif font-medium text-primary" data-testid="text-remove-count">
-                      {removeCount}
-                    </span>
-                    {isAmountBasedCategory && removingItem.amountUnit && (
-                      <span className="text-sm text-muted-foreground ml-1">{removingItem.amountUnit}</span>
+                    <div className="flex items-center justify-center gap-4">
+                      <button
+                        onClick={() => setRemoveCount(Math.max(step, Math.round((removeCount - step) * 100) / 100))}
+                        className="h-10 w-10 rounded-full bg-muted flex items-center justify-center hover:bg-muted-foreground/20 transition-colors"
+                        data-testid="button-remove-decrease"
+                        disabled={removeCount <= step}
+                      >
+                        <Minus size={18} />
+                      </button>
+                      <div className="text-center">
+                        <span className="text-3xl font-serif font-medium text-primary" data-testid="text-remove-count">
+                          {removeCount}
+                        </span>
+                        {unit && (
+                          <span className="text-sm text-muted-foreground ml-1">{unit}</span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => setRemoveCount(Math.min(total, Math.round((removeCount + step) * 100) / 100))}
+                        className="h-10 w-10 rounded-full bg-muted flex items-center justify-center hover:bg-muted-foreground/20 transition-colors"
+                        data-testid="button-remove-increase"
+                        disabled={removeCount >= total}
+                      >
+                        <Plus size={18} />
+                      </button>
+                    </div>
+
+                    {removeCount >= total && (
+                      <p className="text-center text-xs text-destructive font-medium">
+                        This will completely remove the item from inventory
+                      </p>
                     )}
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setRemovingItem(null)}
+                        className="flex-1 py-2.5 rounded-xl border border-border text-foreground font-medium hover:bg-muted transition-colors"
+                        data-testid="button-cancel-remove"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={confirmRemove}
+                        className="flex-1 py-2.5 rounded-xl bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90 transition-colors"
+                        data-testid="button-confirm-remove"
+                      >
+                        Remove {removeCount}{unit ? ` ${unit}` : ''}
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    onClick={() => setRemoveCount(Math.min(getRemovableTotal(removingItem), Math.round((removeCount + getRemoveStep()) * 100) / 100))}
-                    className="h-10 w-10 rounded-full bg-muted flex items-center justify-center hover:bg-muted-foreground/20 transition-colors"
-                    data-testid="button-remove-increase"
-                    disabled={removeCount >= getRemovableTotal(removingItem)}
-                  >
-                    <Plus size={18} />
-                  </button>
-                </div>
-
-                {removeCount >= getRemovableTotal(removingItem) && (
-                  <p className="text-center text-xs text-destructive font-medium">
-                    This will completely remove the item from inventory
-                  </p>
-                )}
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setRemovingItem(null)}
-                    className="flex-1 py-2.5 rounded-xl border border-border text-foreground font-medium hover:bg-muted transition-colors"
-                    data-testid="button-cancel-remove"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={confirmRemove}
-                    className="flex-1 py-2.5 rounded-xl bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90 transition-colors"
-                    data-testid="button-confirm-remove"
-                  >
-                    Remove {removeCount}{isAmountBasedCategory && removingItem.amountUnit ? ` ${removingItem.amountUnit}` : ''}
-                  </button>
-                </div>
-              </div>
+                );
+              })()}
             </motion.div>
           </motion.div>
         )}
