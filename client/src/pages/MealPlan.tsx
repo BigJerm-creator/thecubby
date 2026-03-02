@@ -203,10 +203,11 @@ export default function MealPlan() {
   };
 
   const handleAddToShoppingList = async (item: ShoppingItem, index: number) => {
+    const itemName = item.quantity ? `${item.name} (${item.quantity})` : item.name;
     const res = await fetch("/api/shopping-list", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: item.name, category: item.category }),
+      body: JSON.stringify({ name: itemName, category: item.category }),
     });
     if (res.ok) {
       setAddedShoppingItems(prev => new Set(prev).add(index));
@@ -224,10 +225,11 @@ export default function MealPlan() {
     for (let i = 0; i < generatedPlan.shoppingList.length; i++) {
       if (addedShoppingItems.has(i)) continue;
       const item = generatedPlan.shoppingList[i];
+      const itemName = item.quantity ? `${item.name} (${item.quantity})` : item.name;
       await fetch("/api/shopping-list", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: item.name, category: item.category }),
+        body: JSON.stringify({ name: itemName, category: item.category }),
       });
       setAddedShoppingItems(prev => new Set(prev).add(i));
       count++;
