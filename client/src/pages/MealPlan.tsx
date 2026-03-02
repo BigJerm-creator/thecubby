@@ -197,6 +197,8 @@ export default function MealPlan() {
       title: "All Meals Added",
       description: `${count} meals added to your plan`,
     });
+    setShowAiDialog(false);
+    setGeneratedPlan(null);
   };
 
   const handleAddToShoppingList = async (item: ShoppingItem, index: number) => {
