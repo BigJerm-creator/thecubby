@@ -1,22 +1,48 @@
 import Layout from "@/components/layout";
-import { ArrowLeft, Trash2, AlertTriangle, Calendar, Loader2 } from "lucide-react";
+import { ArrowLeft, Trash2, AlertTriangle, Calendar, Loader2, Minus, Plus } from "lucide-react";
 import { useLocation } from "wouter";
 import { useInventory, InventoryItem } from "@/lib/InventoryContext";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 export default function ExpiredItems() {
   const [, setLocation] = useLocation();
-  const { getExpiredItems, deleteItem, isLoading } = useInventory();
+  const { getExpiredItems, deleteItem, updateItem, isLoading } = useInventory();
   const { toast } = useToast();
   const expiredItems = getExpiredItems();
+  const [removingItem, setRemovingItem] = useState<InventoryItem | null>(null);
+  const [removeCount, setRemoveCount] = useState(1);
 
   const handleDelete = async (item: InventoryItem) => {
-    await deleteItem(item.category, item.id);
-    toast({
-      title: "Item Removed",
-      description: `${item.name} has been removed from inventory.`
-    });
+    if (item.quantity <= 1) {
+      await deleteItem(item.category, item.id);
+      toast({
+        title: "Item Removed",
+        description: `${item.name} has been removed from inventory.`
+      });
+    } else {
+      setRemovingItem(item);
+      setRemoveCount(1);
+    }
+  };
+
+  const confirmRemove = async () => {
+    if (!removingItem) return;
+    if (removeCount >= removingItem.quantity) {
+      await deleteItem(removingItem.category, removingItem.id);
+      toast({
+        title: "Item Removed",
+        description: `${removingItem.name} has been removed from inventory.`
+      });
+    } else {
+      await updateItem(removingItem.id, { quantity: removingItem.quantity - removeCount });
+      toast({
+        title: "Quantity Updated",
+        description: `Removed ${removeCount} of ${removingItem.name} (${removingItem.quantity - removeCount} remaining)`
+      });
+    }
+    setRemovingItem(null);
   };
 
   if (isLoading) {
@@ -102,6 +128,83 @@ export default function ExpiredItems() {
           )}
         </div>
       </div>
+
+      <AnimatePresence>
+        {removingItem && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            onClick={() => setRemovingItem(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="bg-card rounded-2xl w-full max-w-sm shadow-xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-5 space-y-4">
+                <div className="text-center">
+                  <h3 className="font-serif text-xl font-medium text-foreground">
+                    Remove {removingItem.name}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    You have {removingItem.quantity} in inventory. How many do you want to remove?
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-center gap-4">
+                  <button
+                    onClick={() => setRemoveCount(Math.max(1, removeCount - 1))}
+                    className="h-10 w-10 rounded-full bg-muted flex items-center justify-center hover:bg-muted-foreground/20 transition-colors"
+                    data-testid="button-remove-decrease"
+                    disabled={removeCount <= 1}
+                  >
+                    <Minus size={18} />
+                  </button>
+                  <span className="text-3xl font-serif font-medium text-primary w-16 text-center" data-testid="text-remove-count">
+                    {removeCount}
+                  </span>
+                  <button
+                    onClick={() => setRemoveCount(Math.min(removingItem.quantity, removeCount + 1))}
+                    className="h-10 w-10 rounded-full bg-muted flex items-center justify-center hover:bg-muted-foreground/20 transition-colors"
+                    data-testid="button-remove-increase"
+                    disabled={removeCount >= removingItem.quantity}
+                  >
+                    <Plus size={18} />
+                  </button>
+                </div>
+
+                {removeCount >= removingItem.quantity && (
+                  <p className="text-center text-xs text-destructive font-medium">
+                    This will completely remove the item from inventory
+                  </p>
+                )}
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setRemovingItem(null)}
+                    className="flex-1 py-2.5 rounded-xl border border-border text-foreground font-medium hover:bg-muted transition-colors"
+                    data-testid="button-cancel-remove"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmRemove}
+                    className="flex-1 py-2.5 rounded-xl bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90 transition-colors"
+                    data-testid="button-confirm-remove"
+                  >
+                    Remove {removeCount}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </Layout>
   );
 }

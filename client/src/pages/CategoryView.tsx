@@ -1,9 +1,9 @@
 import Layout from "@/components/layout";
 import { Link, useRoute, useLocation } from "wouter";
 import { KITCHEN_CATEGORIES } from "@/lib/mockData";
-import { Loader2 } from "lucide-react";
+import { Loader2, Minus, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useInventory } from "@/lib/InventoryContext";
+import { useInventory, InventoryItem } from "@/lib/InventoryContext";
 import { useShoppingList } from "@/lib/ShoppingListContext";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -18,13 +18,38 @@ export default function CategoryView() {
   const { toast } = useToast();
   const items = inventory[categoryId] || [];
   const [movingItem, setMovingItem] = useState<{ id: number; name: string } | null>(null);
+  const [removingItem, setRemovingItem] = useState<InventoryItem | null>(null);
+  const [removeCount, setRemoveCount] = useState(1);
 
-  const handleDeleteItem = async (itemId: number) => {
-    await deleteItem(categoryId, itemId);
-    toast({
-      title: "Item Removed",
-      description: "Item has been deleted from inventory"
-    });
+  const handleDeleteItem = async (item: InventoryItem) => {
+    if (item.quantity <= 1) {
+      await deleteItem(categoryId, item.id);
+      toast({
+        title: "Item Removed",
+        description: `${item.name} has been removed from inventory`
+      });
+    } else {
+      setRemovingItem(item);
+      setRemoveCount(1);
+    }
+  };
+
+  const confirmRemove = async () => {
+    if (!removingItem) return;
+    if (removeCount >= removingItem.quantity) {
+      await deleteItem(categoryId, removingItem.id);
+      toast({
+        title: "Item Removed",
+        description: `${removingItem.name} has been removed from inventory`
+      });
+    } else {
+      await updateItem(removingItem.id, { quantity: removingItem.quantity - removeCount });
+      toast({
+        title: "Quantity Updated",
+        description: `Removed ${removeCount} of ${removingItem.name} (${removingItem.quantity - removeCount} remaining)`
+      });
+    }
+    setRemovingItem(null);
   };
 
   const handleMoveItem = async (newCategory: string) => {
@@ -162,10 +187,10 @@ export default function CategoryView() {
                   </button>
 
                   <button 
-                    onClick={() => handleDeleteItem(item.id)}
+                    onClick={() => handleDeleteItem(item)}
                     className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center hover:bg-destructive transition-colors text-sm"
                     data-testid={`button-delete-item-${item.id}`}
-                    title="Delete item"
+                    title="Remove from inventory"
                   >
                     🗑️
                   </button>
@@ -218,6 +243,83 @@ export default function CategoryView() {
                       <span className="text-xs text-center font-medium text-foreground">{cat.name}</span>
                     </button>
                   ))}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {removingItem && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            onClick={() => setRemovingItem(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="bg-card rounded-2xl w-full max-w-sm shadow-xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-5 space-y-4">
+                <div className="text-center">
+                  <h3 className="font-serif text-xl font-medium text-foreground">
+                    Remove {removingItem.name}
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    You have {removingItem.quantity} in inventory. How many do you want to remove?
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-center gap-4">
+                  <button
+                    onClick={() => setRemoveCount(Math.max(1, removeCount - 1))}
+                    className="h-10 w-10 rounded-full bg-muted flex items-center justify-center hover:bg-muted-foreground/20 transition-colors"
+                    data-testid="button-remove-decrease"
+                    disabled={removeCount <= 1}
+                  >
+                    <Minus size={18} />
+                  </button>
+                  <span className="text-3xl font-serif font-medium text-primary w-16 text-center" data-testid="text-remove-count">
+                    {removeCount}
+                  </span>
+                  <button
+                    onClick={() => setRemoveCount(Math.min(removingItem.quantity, removeCount + 1))}
+                    className="h-10 w-10 rounded-full bg-muted flex items-center justify-center hover:bg-muted-foreground/20 transition-colors"
+                    data-testid="button-remove-increase"
+                    disabled={removeCount >= removingItem.quantity}
+                  >
+                    <Plus size={18} />
+                  </button>
+                </div>
+
+                {removeCount >= removingItem.quantity && (
+                  <p className="text-center text-xs text-destructive font-medium">
+                    This will completely remove the item from inventory
+                  </p>
+                )}
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setRemovingItem(null)}
+                    className="flex-1 py-2.5 rounded-xl border border-border text-foreground font-medium hover:bg-muted transition-colors"
+                    data-testid="button-cancel-remove"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmRemove}
+                    className="flex-1 py-2.5 rounded-xl bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90 transition-colors"
+                    data-testid="button-confirm-remove"
+                  >
+                    Remove {removeCount}
+                  </button>
                 </div>
               </div>
             </motion.div>
