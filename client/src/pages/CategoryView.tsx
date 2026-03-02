@@ -21,8 +21,29 @@ export default function CategoryView() {
   const [removingItem, setRemovingItem] = useState<InventoryItem | null>(null);
   const [removeCount, setRemoveCount] = useState(1);
 
+  const isAmountBasedCategory = categoryId === 'spices';
+
+  const getRemovableTotal = (item: InventoryItem) => {
+    if (isAmountBasedCategory && item.amount) {
+      return item.amount;
+    }
+    return item.quantity;
+  };
+
+  const getRemoveUnit = (item: InventoryItem) => {
+    if (isAmountBasedCategory && item.amount && item.amountUnit) {
+      return item.amountUnit;
+    }
+    return '';
+  };
+
+  const getRemoveStep = () => {
+    return isAmountBasedCategory ? 0.5 : 1;
+  };
+
   const handleDeleteItem = async (item: InventoryItem) => {
-    if (item.quantity <= 1) {
+    const total = getRemovableTotal(item);
+    if (total <= (isAmountBasedCategory ? 0 : 1)) {
       await deleteItem(categoryId, item.id);
       toast({
         title: "Item Removed",
@@ -30,17 +51,25 @@ export default function CategoryView() {
       });
     } else {
       setRemovingItem(item);
-      setRemoveCount(1);
+      setRemoveCount(isAmountBasedCategory ? getRemoveStep() : 1);
     }
   };
 
   const confirmRemove = async () => {
     if (!removingItem) return;
-    if (removeCount >= removingItem.quantity) {
+    const total = getRemovableTotal(removingItem);
+    if (removeCount >= total) {
       await deleteItem(categoryId, removingItem.id);
       toast({
         title: "Item Removed",
         description: `${removingItem.name} has been removed from inventory`
+      });
+    } else if (isAmountBasedCategory && removingItem.amount) {
+      const newAmount = Math.round((removingItem.amount - removeCount) * 100) / 100;
+      await updateItem(removingItem.id, { amount: newAmount });
+      toast({
+        title: "Amount Updated",
+        description: `Removed ${removeCount} ${removingItem.amountUnit || 'oz'} of ${removingItem.name} (${newAmount} ${removingItem.amountUnit || 'oz'} remaining)`
       });
     } else {
       await updateItem(removingItem.id, { quantity: removingItem.quantity - removeCount });
@@ -273,33 +302,41 @@ export default function CategoryView() {
                     Remove {removingItem.name}
                   </h3>
                   <p className="text-sm text-muted-foreground mt-1">
-                    You have {removingItem.quantity} in inventory. How many do you want to remove?
+                    {isAmountBasedCategory && removingItem.amount
+                      ? `You have ${removingItem.amount} ${removingItem.amountUnit || 'oz'} on hand. How much do you want to remove?`
+                      : `You have ${removingItem.quantity} in inventory. How many do you want to remove?`
+                    }
                   </p>
                 </div>
 
                 <div className="flex items-center justify-center gap-4">
                   <button
-                    onClick={() => setRemoveCount(Math.max(1, removeCount - 1))}
+                    onClick={() => setRemoveCount(Math.max(getRemoveStep(), Math.round((removeCount - getRemoveStep()) * 100) / 100))}
                     className="h-10 w-10 rounded-full bg-muted flex items-center justify-center hover:bg-muted-foreground/20 transition-colors"
                     data-testid="button-remove-decrease"
-                    disabled={removeCount <= 1}
+                    disabled={removeCount <= getRemoveStep()}
                   >
                     <Minus size={18} />
                   </button>
-                  <span className="text-3xl font-serif font-medium text-primary w-16 text-center" data-testid="text-remove-count">
-                    {removeCount}
-                  </span>
+                  <div className="text-center">
+                    <span className="text-3xl font-serif font-medium text-primary" data-testid="text-remove-count">
+                      {removeCount}
+                    </span>
+                    {isAmountBasedCategory && removingItem.amountUnit && (
+                      <span className="text-sm text-muted-foreground ml-1">{removingItem.amountUnit}</span>
+                    )}
+                  </div>
                   <button
-                    onClick={() => setRemoveCount(Math.min(removingItem.quantity, removeCount + 1))}
+                    onClick={() => setRemoveCount(Math.min(getRemovableTotal(removingItem), Math.round((removeCount + getRemoveStep()) * 100) / 100))}
                     className="h-10 w-10 rounded-full bg-muted flex items-center justify-center hover:bg-muted-foreground/20 transition-colors"
                     data-testid="button-remove-increase"
-                    disabled={removeCount >= removingItem.quantity}
+                    disabled={removeCount >= getRemovableTotal(removingItem)}
                   >
                     <Plus size={18} />
                   </button>
                 </div>
 
-                {removeCount >= removingItem.quantity && (
+                {removeCount >= getRemovableTotal(removingItem) && (
                   <p className="text-center text-xs text-destructive font-medium">
                     This will completely remove the item from inventory
                   </p>
@@ -318,7 +355,7 @@ export default function CategoryView() {
                     className="flex-1 py-2.5 rounded-xl bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90 transition-colors"
                     data-testid="button-confirm-remove"
                   >
-                    Remove {removeCount}
+                    Remove {removeCount}{isAmountBasedCategory && removingItem.amountUnit ? ` ${removingItem.amountUnit}` : ''}
                   </button>
                 </div>
               </div>
