@@ -24,6 +24,7 @@ interface GeneratedMeal {
 
 interface ShoppingItem {
   name: string;
+  quantity?: string;
   category: string;
 }
 
@@ -794,6 +795,9 @@ export default function MealPlan() {
                               >
                                 <div>
                                   <span className="text-sm">{item.name}</span>
+                                  {item.quantity && (
+                                    <span className="text-xs text-primary font-medium ml-2">{item.quantity}</span>
+                                  )}
                                   <span className="text-xs text-muted-foreground ml-2 capitalize">{item.category}</span>
                                 </div>
                                 {!isAdded ? (

@@ -823,6 +823,7 @@ You MUST respond with valid JSON only (no markdown, no code fences). Use this ex
   "shoppingList": [
     {
       "name": "Item name",
+      "quantity": "amount needed (e.g. '2 lbs', '1 can', '3 cups', '1 bunch', '16 oz')",
       "category": "produce|meat|dairy|canned|frozen|boxed|spices|condiments|bakery|beverages|snacks|other"
     }
   ]
