@@ -56,10 +56,23 @@ Preferred communication style: Simple, everyday language.
   - Batch processing utilities with rate limiting
   - PDF-to-recipe extraction using OpenAI
 
+### Native Mobile (Capacitor)
+- **Capacitor**: Wraps the web app for native iOS and Android distribution
+- **Config**: `capacitor.config.ts` - app ID, plugins, platform settings
+- **iOS Project**: `ios/` directory (requires Mac + Xcode to build)
+- **Android Project**: `android/` directory (requires Android Studio to build)
+- **Native Plugins**: Camera, Haptics, Keyboard, StatusBar, SplashScreen, App, Browser
+- **CORS**: Server allows requests from `capacitor://localhost` and `https://localhost` for native apps
+- **API URL**: Native apps connect to deployed server via `VITE_API_URL` env var
+- **Native Bridge**: `client/src/lib/capacitor.ts` - platform detection and URL resolution
+- **Native Init**: `client/src/lib/native-init.ts` - status bar, keyboard, splash screen setup
+- **Build Guide**: `NATIVE_BUILD_GUIDE.md` - step-by-step instructions for building native apps
+
 ### Build Configuration
 - Development: Vite dev server with HMR on port 5000
 - Production: esbuild bundles server, Vite builds client to `dist/public`
 - Server serves static files in production, proxies to Vite in development
+- Native: `npm run build` then `npx cap sync` to update native projects
 
 ## External Dependencies
 
