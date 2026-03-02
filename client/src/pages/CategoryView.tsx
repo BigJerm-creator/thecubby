@@ -21,10 +21,10 @@ export default function CategoryView() {
   const [removingItem, setRemovingItem] = useState<InventoryItem | null>(null);
   const [removeCount, setRemoveCount] = useState(1);
 
-  const isSpices = categoryId === 'spices';
+  const isAmountCategory = categoryId === 'spices' || categoryId === 'condiments';
 
   const useAmountMode = (item: InventoryItem) => {
-    return isSpices && item.amount != null && item.amount > 0;
+    return isAmountCategory && item.amount != null && item.amount > 0;
   };
 
   const handleDeleteItem = async (item: InventoryItem) => {
