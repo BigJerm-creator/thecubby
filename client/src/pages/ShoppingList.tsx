@@ -72,7 +72,7 @@ export default function ShoppingListPage() {
 
                   <button 
                     onClick={() => removeItem(item.id)}
-                    className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors opacity-0 group-hover:opacity-100"
+                    className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
                     data-testid={`button-delete-shopping-${item.id}`}
                   >
                     <Trash2 size={16} />
@@ -109,7 +109,7 @@ export default function ShoppingListPage() {
 
                       <button 
                         onClick={() => removeItem(item.id)}
-                        className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors opacity-0 group-hover:opacity-100"
+                        className="h-8 w-8 rounded-full bg-destructive/10 flex items-center justify-center text-destructive hover:bg-destructive hover:text-destructive-foreground transition-colors"
                         data-testid={`button-delete-completed-${item.id}`}
                       >
                         <Trash2 size={16} />
