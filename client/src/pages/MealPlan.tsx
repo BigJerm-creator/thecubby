@@ -65,7 +65,7 @@ export default function MealPlan() {
   });
 
   const [viewingRecipe, setViewingRecipe] = useState<Recipe | null>(null);
-  const [viewingCustomMeal, setViewingCustomMeal] = useState<{ name: string; notes: string; mealType: string } | null>(null);
+  const [viewingCustomMeal, setViewingCustomMeal] = useState<{ name: string; notes: string; mealType: string; recipeData?: { description: string; ingredients: string[]; instructions: string; prepTime: string; cookTime: string; servings: string } } | null>(null);
   const [viewingGeneratedMeal, setViewingGeneratedMeal] = useState<GeneratedMeal | null>(null);
 
   const [showAiDialog, setShowAiDialog] = useState(false);
@@ -253,32 +253,35 @@ export default function MealPlan() {
     });
   };
 
-  const saveMealAsRecipeAndPlan = async (meal: GeneratedMeal) => {
-    const recipeRes = await apiRequest("POST", "/api/recipes", {
-      title: meal.name,
+  const parseMealNotes = (notes: string | null | undefined) => {
+    if (!notes) return null;
+    try {
+      const parsed = JSON.parse(notes);
+      if (parsed && typeof parsed === "object" && Array.isArray(parsed.ingredients)) {
+        return parsed as { description: string; ingredients: string[]; instructions: string; prepTime: string; cookTime: string; servings: string };
+      }
+    } catch {}
+    return null;
+  };
+
+  const serializeMealNotes = (meal: GeneratedMeal) => {
+    return JSON.stringify({
       description: meal.description || "",
       ingredients: meal.ingredients || [],
       instructions: meal.instructions || "",
       prepTime: meal.prepTime || "",
       cookTime: meal.cookTime || "",
       servings: meal.servings || "",
-      category: meal.mealType === "snack" ? "snack" : meal.mealType,
-      source: "AI Meal Plan",
     });
-    const recipe = await recipeRes.json();
-    await addMealPlan.mutateAsync({
-      date: meal.date,
-      mealType: meal.mealType,
-      recipeId: recipe.id,
-      customMealName: meal.name,
-      notes: meal.description,
-    });
-    queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
-    return recipe;
   };
 
   const handleSaveMeal = async (meal: GeneratedMeal, index: number) => {
-    await saveMealAsRecipeAndPlan(meal);
+    await addMealPlan.mutateAsync({
+      date: meal.date,
+      mealType: meal.mealType,
+      customMealName: meal.name,
+      notes: serializeMealNotes(meal),
+    });
     setSavedMeals(prev => new Set(prev).add(index));
     toast({
       title: "Meal Added",
@@ -292,7 +295,12 @@ export default function MealPlan() {
     for (let i = 0; i < generatedPlan.meals.length; i++) {
       if (savedMeals.has(i)) continue;
       const meal = generatedPlan.meals[i];
-      await saveMealAsRecipeAndPlan(meal);
+      await addMealPlan.mutateAsync({
+        date: meal.date,
+        mealType: meal.mealType,
+        customMealName: meal.name,
+        notes: serializeMealNotes(meal),
+      });
       setSavedMeals(prev => new Set(prev).add(i));
       count++;
     }
@@ -520,10 +528,12 @@ export default function MealPlan() {
                                         const recipe = recipes.find(r => r.id === meal.recipeId);
                                         if (recipe) setViewingRecipe(recipe);
                                       } else {
+                                        const recipeData = parseMealNotes(meal.notes);
                                         setViewingCustomMeal({
                                           name: meal.customMealName || "Untitled Meal",
-                                          notes: meal.notes || "",
+                                          notes: recipeData?.description || meal.notes || "",
                                           mealType: meal.mealType,
+                                          recipeData: recipeData || undefined,
                                         });
                                       }
                                     }}
@@ -546,10 +556,15 @@ export default function MealPlan() {
                                         size="icon"
                                         className="h-8 w-8 text-primary hover:text-primary"
                                         onClick={() => {
+                                          const rd = parseMealNotes(meal.notes);
                                           saveToRecipeBookMutation.mutate({
                                             title: meal.customMealName || "Untitled Meal",
-                                            description: meal.notes || "",
-                                            ingredients: [],
+                                            description: rd?.description || meal.notes || "",
+                                            ingredients: rd?.ingredients || [],
+                                            instructions: rd?.instructions,
+                                            prepTime: rd?.prepTime,
+                                            cookTime: rd?.cookTime,
+                                            servings: rd?.servings,
                                             mealType: meal.mealType,
                                             mealId: meal.id,
                                           });
@@ -571,7 +586,8 @@ export default function MealPlan() {
                                         className="h-8 w-8 text-primary hover:text-primary"
                                         onClick={() => {
                                           const recipe = meal.recipeId ? recipes.find(r => r.id === meal.recipeId) : null;
-                                          const ingredients = recipe?.ingredients?.filter(i => i.trim() && i !== "--") || [];
+                                          const rd = parseMealNotes(meal.notes);
+                                          const ingredients = recipe?.ingredients?.filter(i => i.trim() && i !== "--") || rd?.ingredients || [];
                                           if (ingredients.length > 0) {
                                             markCookedMutation.mutate({ ingredients, mealId: meal.id });
                                           } else {
@@ -1122,15 +1138,60 @@ export default function MealPlan() {
       </Dialog>
 
       <Dialog open={!!viewingCustomMeal} onOpenChange={(open) => { if (!open) setViewingCustomMeal(null); }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
           {viewingCustomMeal && (
             <>
               <DialogHeader>
                 <DialogTitle className="text-xl font-serif">{viewingCustomMeal.name}</DialogTitle>
               </DialogHeader>
-              <div className="space-y-3 pt-2">
+              <div className="space-y-4 pt-2">
                 <div className="text-xs text-muted-foreground capitalize">{viewingCustomMeal.mealType}</div>
-                {viewingCustomMeal.notes ? (
+                {viewingCustomMeal.recipeData ? (
+                  <>
+                    {viewingCustomMeal.recipeData.description && (
+                      <p className="text-sm text-muted-foreground">{viewingCustomMeal.recipeData.description}</p>
+                    )}
+                    <div className="flex gap-4 text-sm">
+                      {viewingCustomMeal.recipeData.prepTime && (
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <Clock size={14} />
+                          <span>Prep: {viewingCustomMeal.recipeData.prepTime}</span>
+                        </div>
+                      )}
+                      {viewingCustomMeal.recipeData.cookTime && (
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <Clock size={14} />
+                          <span>Cook: {viewingCustomMeal.recipeData.cookTime}</span>
+                        </div>
+                      )}
+                      {viewingCustomMeal.recipeData.servings && (
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <Users size={14} />
+                          <span>{viewingCustomMeal.recipeData.servings}</span>
+                        </div>
+                      )}
+                    </div>
+                    {viewingCustomMeal.recipeData.ingredients.length > 0 && (
+                      <div>
+                        <h3 className="text-sm font-serif font-medium mb-2">Ingredients</h3>
+                        <ul className="space-y-1.5">
+                          {viewingCustomMeal.recipeData.ingredients.map((ing, idx) => (
+                            <li key={idx} className="flex items-start gap-2 text-sm">
+                              <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0"></span>
+                              <span>{ing}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {viewingCustomMeal.recipeData.instructions && (
+                      <div>
+                        <h3 className="text-sm font-serif font-medium mb-2">Instructions</h3>
+                        <div className="prose prose-sm text-foreground whitespace-pre-wrap text-sm">{viewingCustomMeal.recipeData.instructions}</div>
+                      </div>
+                    )}
+                  </>
+                ) : viewingCustomMeal.notes ? (
                   <p className="text-sm text-foreground whitespace-pre-wrap">{viewingCustomMeal.notes}</p>
                 ) : (
                   <p className="text-sm text-muted-foreground italic">No description available for this meal.</p>
