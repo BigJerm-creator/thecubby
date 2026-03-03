@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, ChefHat, Loader2, Sparkles, BookPlus, Check } from "lucide-react";
+import { ArrowLeft, ChefHat, Loader2, Sparkles, BookPlus, Check, CheckSquare } from "lucide-react";
 import { useInventory } from "@/lib/InventoryContext";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function RecipeGenerator() {
   const [, setLocation] = useLocation();
@@ -17,7 +18,48 @@ export default function RecipeGenerator() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isMarkedCooked, setIsMarkedCooked] = useState(false);
   const recipeRef = useRef<HTMLDivElement>(null);
+
+  const extractIngredients = (text: string): string[] => {
+    const lines = text.split('\n');
+    const ingredients: string[] = [];
+    let inIngredients = false;
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.match(/^#+ /) || (trimmed.startsWith('**') && trimmed.endsWith('**'))) {
+        const heading = trimmed.replace(/^#+\s*/, '').replace(/^\*\*|\*\*$/g, '').toLowerCase();
+        inIngredients = heading.includes('ingredient');
+        continue;
+      }
+      if (inIngredients && (trimmed.startsWith('-') || trimmed.startsWith('•') || trimmed.match(/^\d/))) {
+        const cleaned = trimmed.replace(/^[-•]\s*/, '').trim();
+        if (cleaned && cleaned !== '--') ingredients.push(cleaned);
+      }
+    }
+    return ingredients;
+  };
+
+  const markCookedMutation = useMutation({
+    mutationFn: async (ingredients: string[]) => {
+      const res = await apiRequest("POST", "/api/inventory/use-ingredients", { ingredients });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory/expired"] });
+      setIsMarkedCooked(true);
+      const matched = data.used.filter((u: any) => u.matched).length;
+      const total = data.used.filter((u: any) => u.name.trim()).length;
+      toast({
+        title: "Marked as cooked!",
+        description: `${matched} of ${total} ingredients removed from inventory.`,
+      });
+    },
+    onError: () => {
+      toast({ title: "Failed to update inventory", variant: "destructive" });
+    },
+  });
 
   const ingredientCount = Object.values(inventory).flat().length;
 
@@ -32,6 +74,7 @@ export default function RecipeGenerator() {
     setRecipe("");
     setError(null);
     setIsSaved(false);
+    setIsMarkedCooked(false);
 
     try {
       const response = await fetch("/api/generate-recipe", {
@@ -245,30 +288,63 @@ export default function RecipeGenerator() {
                 </div>
               )}
               {!isGenerating && (
-                <Button
-                  onClick={saveToRecipeBook}
-                  disabled={isSaving || isSaved}
-                  variant={isSaved ? "outline" : "default"}
-                  className="w-full mt-6 gap-2"
-                  data-testid="button-save-to-recipe-book"
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : isSaved ? (
-                    <>
-                      <Check className="h-4 w-4" />
-                      Saved to Recipe Book
-                    </>
-                  ) : (
-                    <>
-                      <BookPlus className="h-4 w-4" />
-                      Save to Recipe Book
-                    </>
-                  )}
-                </Button>
+                <div className="space-y-3 mt-6">
+                  <Button
+                    onClick={saveToRecipeBook}
+                    disabled={isSaving || isSaved}
+                    variant={isSaved ? "outline" : "default"}
+                    className="w-full gap-2"
+                    data-testid="button-save-to-recipe-book"
+                  >
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : isSaved ? (
+                      <>
+                        <Check className="h-4 w-4" />
+                        Saved to Recipe Book
+                      </>
+                    ) : (
+                      <>
+                        <BookPlus className="h-4 w-4" />
+                        Save to Recipe Book
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      const ingredients = extractIngredients(recipe);
+                      if (ingredients.length > 0) {
+                        markCookedMutation.mutate(ingredients);
+                      } else {
+                        toast({ title: "Could not find ingredients in the recipe" });
+                      }
+                    }}
+                    disabled={markCookedMutation.isPending || isMarkedCooked}
+                    variant="outline"
+                    className="w-full gap-2"
+                    data-testid="button-mark-cooked-generated"
+                  >
+                    {markCookedMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Updating Inventory...
+                      </>
+                    ) : isMarkedCooked ? (
+                      <>
+                        <Check className="h-4 w-4" />
+                        Ingredients Removed
+                      </>
+                    ) : (
+                      <>
+                        <CheckSquare className="h-4 w-4" />
+                        Mark as Cooked
+                      </>
+                    )}
+                  </Button>
+                </div>
               )}
             </CardContent>
           </Card>

@@ -8,9 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronLeft, ChevronRight, Plus, Trash2, CalendarDays, UtensilsCrossed, Coffee, Sun, Moon, Cookie, ArrowLeft, Sparkles, ShoppingCart, Check, Loader2, X, RefreshCw } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trash2, CalendarDays, UtensilsCrossed, Coffee, Sun, Moon, Cookie, ArrowLeft, Sparkles, ShoppingCart, Check, Loader2, X, RefreshCw, CheckSquare } from "lucide-react";
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isToday, parseISO, addDays } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
+import { apiRequest } from "@/lib/queryClient";
 import type { MealPlan, Recipe } from "@shared/schema";
 
 interface GeneratedMeal {
@@ -110,6 +111,34 @@ export default function MealPlan() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/meal-plans"] });
+    },
+  });
+
+  const [cookedMeals, setCookedMeals] = useState<Set<number>>(new Set());
+  const [cookedGenMeals, setCookedGenMeals] = useState<Set<number>>(new Set());
+
+  const markCookedMutation = useMutation({
+    mutationFn: async ({ ingredients, mealId, isGenerated }: { ingredients: string[]; mealId: number; isGenerated?: boolean }) => {
+      const res = await apiRequest("POST", "/api/inventory/use-ingredients", { ingredients });
+      return { data: await res.json(), mealId, isGenerated };
+    },
+    onSuccess: ({ data, mealId, isGenerated }) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory/expired"] });
+      if (isGenerated) {
+        setCookedGenMeals(prev => new Set(prev).add(mealId));
+      } else {
+        setCookedMeals(prev => new Set(prev).add(mealId));
+      }
+      const matched = data.used.filter((u: any) => u.matched).length;
+      const total = data.used.filter((u: any) => u.name.trim() && u.name !== "--").length;
+      toast({
+        title: "Marked as cooked!",
+        description: `${matched} of ${total} ingredients removed from inventory.`,
+      });
+    },
+    onError: () => {
+      toast({ title: "Failed to update inventory", variant: "destructive" });
     },
   });
 
@@ -421,15 +450,41 @@ export default function MealPlan() {
                                       <div className="text-xs text-muted-foreground capitalize">{meal.mealType}</div>
                                     </div>
                                   </div>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-destructive hover:text-destructive"
-                                    onClick={() => deleteMealPlan.mutate(meal.id)}
-                                    data-testid={`delete-meal-${meal.id}`}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
+                                  <div className="flex items-center gap-1">
+                                    {!cookedMeals.has(meal.id) ? (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-primary hover:text-primary"
+                                        onClick={() => {
+                                          const recipe = meal.recipeId ? recipes.find(r => r.id === meal.recipeId) : null;
+                                          const ingredients = recipe?.ingredients?.filter(i => i.trim() && i !== "--") || [];
+                                          if (ingredients.length > 0) {
+                                            markCookedMutation.mutate({ ingredients, mealId: meal.id });
+                                          } else {
+                                            toast({ title: "No ingredients found for this meal" });
+                                          }
+                                        }}
+                                        disabled={markCookedMutation.isPending}
+                                        data-testid={`button-cooked-meal-${meal.id}`}
+                                      >
+                                        <CheckSquare className="h-4 w-4" />
+                                      </Button>
+                                    ) : (
+                                      <div className="h-8 w-8 flex items-center justify-center text-primary">
+                                        <Check className="h-4 w-4" />
+                                      </div>
+                                    )}
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-destructive hover:text-destructive"
+                                      onClick={() => deleteMealPlan.mutate(meal.id)}
+                                      data-testid={`delete-meal-${meal.id}`}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
                                 </div>
                               );
                             })}
@@ -727,22 +782,46 @@ export default function MealPlan() {
                                     )}
                                   </div>
                                 </div>
-                                {!isSaved ? (
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="flex-shrink-0 h-8 w-8 p-0 text-primary"
-                                    onClick={() => handleSaveMeal(meal, mealIndex)}
-                                    disabled={addMealPlan.isPending}
-                                    data-testid={`button-save-meal-${mealIndex}`}
-                                  >
-                                    <Plus className="h-4 w-4" />
-                                  </Button>
-                                ) : (
-                                  <div className="flex-shrink-0 h-8 w-8 flex items-center justify-center text-primary">
-                                    <Check className="h-4 w-4" />
-                                  </div>
-                                )}
+                                <div className="flex items-center gap-1 flex-shrink-0">
+                                  {!cookedGenMeals.has(mealIndex) ? (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-8 w-8 p-0 text-primary"
+                                      onClick={() => {
+                                        if (meal.ingredients.length > 0) {
+                                          markCookedMutation.mutate({ ingredients: meal.ingredients, mealId: mealIndex, isGenerated: true });
+                                        } else {
+                                          toast({ title: "No ingredients found for this meal" });
+                                        }
+                                      }}
+                                      disabled={markCookedMutation.isPending}
+                                      data-testid={`button-cooked-gen-${mealIndex}`}
+                                    >
+                                      <CheckSquare className="h-4 w-4" />
+                                    </Button>
+                                  ) : (
+                                    <div className="h-8 w-8 flex items-center justify-center text-green-600">
+                                      <Check className="h-4 w-4" />
+                                    </div>
+                                  )}
+                                  {!isSaved ? (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-8 w-8 p-0 text-primary"
+                                      onClick={() => handleSaveMeal(meal, mealIndex)}
+                                      disabled={addMealPlan.isPending}
+                                      data-testid={`button-save-meal-${mealIndex}`}
+                                    >
+                                      <Plus className="h-4 w-4" />
+                                    </Button>
+                                  ) : (
+                                    <div className="h-8 w-8 flex items-center justify-center text-primary">
+                                      <Check className="h-4 w-4" />
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                               {meal.ingredients.length > 0 && (
                                 <div className="flex flex-wrap gap-1 pl-9">

@@ -1,15 +1,17 @@
 import { useState, useRef } from "react";
 import Layout from "@/components/layout";
-import { Book, Plus, Upload, Heart, Clock, Users, Trash2, ChevronRight, X, Loader2, Camera, CalendarPlus } from "lucide-react";
+import { Book, Plus, Upload, Heart, Clock, Users, Trash2, ChevronRight, X, Loader2, Camera, CalendarPlus, CheckSquare, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, addDays } from "date-fns";
+import { apiRequest } from "@/lib/queryClient";
 import type { Recipe } from "@shared/schema";
 
 export default function RecipeBook() {
@@ -88,6 +90,30 @@ export default function RecipeBook() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
+    },
+  });
+
+  const [isMarkingCooked, setIsMarkingCooked] = useState(false);
+
+  const markCookedMutation = useMutation({
+    mutationFn: async (ingredients: string[]) => {
+      const res = await apiRequest("POST", "/api/inventory/use-ingredients", { ingredients });
+      return res.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory/expired"] });
+      const matched = data.used.filter((u: any) => u.matched).length;
+      const total = data.used.filter((u: any) => u.name.trim() && u.name !== "--").length;
+      toast({
+        title: "Marked as cooked!",
+        description: `${matched} of ${total} ingredients removed from inventory.`,
+      });
+      setIsMarkingCooked(false);
+    },
+    onError: () => {
+      toast({ title: "Failed to update inventory", variant: "destructive" });
+      setIsMarkingCooked(false);
     },
   });
 
@@ -356,6 +382,55 @@ export default function RecipeBook() {
               <CalendarPlus size={18} />
               Add to Meal Plan
             </Button>
+
+            {selectedRecipe.ingredients && selectedRecipe.ingredients.length > 0 && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    disabled={isMarkingCooked || markCookedMutation.isPending}
+                    className="w-full gap-2"
+                    variant="outline"
+                    data-testid="button-mark-cooked"
+                  >
+                    {markCookedMutation.isPending ? (
+                      <>
+                        <Loader2 size={18} className="animate-spin" />
+                        Updating Inventory...
+                      </>
+                    ) : isMarkingCooked ? (
+                      <>
+                        <Check size={18} />
+                        Cooked - Inventory Updated
+                      </>
+                    ) : (
+                      <>
+                        <CheckSquare size={18} />
+                        Mark as Cooked
+                      </>
+                    )}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Mark as Cooked?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will remove matching ingredients from your inventory. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => {
+                        setIsMarkingCooked(true);
+                        markCookedMutation.mutate(selectedRecipe.ingredients!.filter(i => i.trim() && i !== "--"));
+                      }}
+                    >
+                      Yes, Remove Ingredients
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
 
           <Dialog open={showMealPlanDialog} onOpenChange={setShowMealPlanDialog}>

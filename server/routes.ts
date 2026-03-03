@@ -418,6 +418,86 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/inventory/use-ingredients", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).claims.sub;
+      const { ingredients } = req.body as { ingredients: string[] };
+      if (!ingredients || !Array.isArray(ingredients)) {
+        return res.status(400).json({ error: "ingredients array is required" });
+      }
+
+      const allItems = await storage.getInventoryItems(userId);
+      const used: { name: string; matched: string | null }[] = [];
+      const updates: { id: number; quantity: number }[] = [];
+      const deletes: number[] = [];
+      const consumed = new Set<number>();
+
+      for (const ingredientLine of ingredients) {
+        const normalized = ingredientLine
+          .replace(/\*\*/g, "")
+          .replace(/--/g, "")
+          .replace(/^\d+[\.\)]\s*/, "")
+          .replace(/^[-•]\s*/, "")
+          .trim()
+          .toLowerCase();
+        if (!normalized) continue;
+
+        let bestMatch: typeof allItems[0] | null = null;
+        let bestScore = 0;
+
+        for (const item of allItems) {
+          if (consumed.has(item.id)) continue;
+          const itemName = item.name.toLowerCase();
+
+          if (normalized.includes(itemName) || itemName.includes(normalized)) {
+            const score = itemName.length;
+            if (score > bestScore) {
+              bestScore = score;
+              bestMatch = item;
+            }
+          } else {
+            const nameWords = itemName.split(/\s+/).filter(w => w.length > 2);
+            const matchedWords = nameWords.filter(w => normalized.includes(w));
+            if (matchedWords.length >= Math.ceil(nameWords.length * 0.6) && matchedWords.length >= 1) {
+              const score = matchedWords.length;
+              if (score > bestScore) {
+                bestScore = score;
+                bestMatch = item;
+              }
+            }
+          }
+        }
+
+        if (bestMatch) {
+          consumed.add(bestMatch.id);
+          if (bestMatch.quantity > 1) {
+            bestMatch.quantity -= 1;
+            updates.push({ id: bestMatch.id, quantity: bestMatch.quantity });
+          } else {
+            deletes.push(bestMatch.id);
+            const idx = allItems.indexOf(bestMatch);
+            if (idx > -1) allItems.splice(idx, 1);
+          }
+          used.push({ name: ingredientLine, matched: bestMatch.name });
+        } else {
+          used.push({ name: ingredientLine, matched: null });
+        }
+      }
+
+      for (const upd of updates) {
+        await storage.updateInventoryItem(userId, upd.id, { quantity: upd.quantity });
+      }
+      for (const id of deletes) {
+        await storage.deleteInventoryItem(userId, id);
+      }
+
+      res.json({ used });
+    } catch (error) {
+      console.error("Error using ingredients:", error);
+      res.status(500).json({ error: "Failed to use ingredients" });
+    }
+  });
+
   app.get("/api/shopping-list", isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).claims.sub;
