@@ -26,23 +26,27 @@ import Appearance from "@/pages/Appearance";
 
 function AuthenticatedRouter() {
   return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/kitchen" component={Kitchen} />
-      <Route path="/category/:id" component={CategoryView} />
-      <Route path="/scan" component={Scan} />
-      <Route path="/manual-entry" component={ManualEntry} />
-      <Route path="/expired" component={ExpiredItems} />
-      <Route path="/shopping-list" component={ShoppingListPage} />
-      <Route path="/search" component={Search} />
-      <Route path="/settings" component={Settings} />
-      <Route path="/profile" component={Profile} />
-      <Route path="/appearance" component={Appearance} />
-      <Route path="/recipes" component={RecipeGenerator} />
-      <Route path="/recipe-book" component={RecipeBook} />
-      <Route path="/meal-plan" component={MealPlan} />
-      <Route component={NotFound} />
-    </Switch>
+    <InventoryProvider>
+      <ShoppingListProvider>
+        <Switch>
+          <Route path="/" component={Home} />
+          <Route path="/kitchen" component={Kitchen} />
+          <Route path="/category/:id" component={CategoryView} />
+          <Route path="/scan" component={Scan} />
+          <Route path="/manual-entry" component={ManualEntry} />
+          <Route path="/expired" component={ExpiredItems} />
+          <Route path="/shopping-list" component={ShoppingListPage} />
+          <Route path="/search" component={Search} />
+          <Route path="/settings" component={Settings} />
+          <Route path="/profile" component={Profile} />
+          <Route path="/appearance" component={Appearance} />
+          <Route path="/recipes" component={RecipeGenerator} />
+          <Route path="/recipe-book" component={RecipeBook} />
+          <Route path="/meal-plan" component={MealPlan} />
+          <Route component={NotFound} />
+        </Switch>
+      </ShoppingListProvider>
+    </InventoryProvider>
   );
 }
 
@@ -68,14 +72,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <InventoryProvider>
-          <ShoppingListProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Router />
-            </TooltipProvider>
-          </ShoppingListProvider>
-        </InventoryProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

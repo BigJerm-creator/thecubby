@@ -13,7 +13,7 @@ Preferred communication style: Simple, everyday language.
 ### Frontend Architecture
 - **Framework**: React 18 with TypeScript
 - **Routing**: Wouter (lightweight React router)
-- **State Management**: TanStack React Query for server state, React Context for local state (InventoryContext, ShoppingListContext)
+- **State Management**: TanStack React Query for server state (5-min staleTime, refetchOnWindowFocus), React Context for local state (InventoryContext, ShoppingListContext — scoped inside AuthenticatedRouter)
 - **UI Components**: shadcn/ui component library with Radix UI primitives
 - **Styling**: Tailwind CSS v4 with custom "modern farmhouse" theme (sage, cream, charcoal palette)
 - **Animations**: Framer Motion for page transitions and micro-interactions

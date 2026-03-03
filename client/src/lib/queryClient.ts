@@ -51,17 +51,43 @@ export const getQueryFn: <T>(options: {
     return await res.json();
   };
 
+let redirecting = false;
+function handleUnauthorized() {
+  if (!redirecting) {
+    redirecting = true;
+    window.location.href = "/api/login";
+  }
+}
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
-      refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: false,
+      refetchOnWindowFocus: true,
+      staleTime: 1000 * 60 * 5,
+      retry: (failureCount, error) => {
+        if (error instanceof Error && error.message.startsWith("401:")) {
+          return false;
+        }
+        return failureCount < 2;
+      },
     },
     mutations: {
       retry: false,
+      onError: (error) => {
+        if (error instanceof Error && error.message.startsWith("401:")) {
+          handleUnauthorized();
+        }
+      },
     },
   },
 });
+
+queryClient.getQueryCache().config.onError = (error, query) => {
+  if (error instanceof Error && error.message.startsWith("401:")) {
+    const queryKey = query.queryKey as string[];
+    if (queryKey[0] === "/api/auth/user") return;
+    handleUnauthorized();
+  }
+};
