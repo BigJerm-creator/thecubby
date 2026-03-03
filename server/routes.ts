@@ -886,7 +886,7 @@ Only return the JSON object, no additional text or markdown.`
         messages: [
           {
             role: "system",
-            content: `You are a helpful meal planning assistant. Generate a ${days}-day meal plan. ${dietaryContext}
+            content: `You are a helpful meal planning assistant and recipe creator. Generate a ${days}-day meal plan with FULL recipes. ${dietaryContext}
 
 You MUST respond with valid JSON only (no markdown, no code fences). Use this exact structure:
 {
@@ -896,8 +896,12 @@ You MUST respond with valid JSON only (no markdown, no code fences). Use this ex
       "date": "YYYY-MM-DD",
       "mealType": "breakfast|lunch|dinner|snack",
       "name": "Meal name",
-      "description": "Brief description",
-      "ingredients": ["ingredient 1", "ingredient 2"]
+      "description": "Brief 1-2 sentence description of the dish",
+      "ingredients": ["1 cup rice", "2 chicken breasts", "1 tbsp olive oil"],
+      "instructions": "Step-by-step cooking instructions. Number each step. Be detailed and clear.",
+      "prepTime": "15 mins",
+      "cookTime": "30 mins",
+      "servings": "4 servings"
     }
   ],
   "shoppingList": [
@@ -911,7 +915,9 @@ You MUST respond with valid JSON only (no markdown, no code fences). Use this ex
 
 Rules:
 - Prioritize using ingredients the user already has in their pantry
-- For each meal, list the key ingredients needed
+- For each meal, list ALL ingredients with exact measurements (e.g. "2 cups flour", "1 lb ground beef")
+- Write detailed step-by-step cooking instructions for every meal
+- Include realistic prep time, cook time, and serving size for every meal
 - In "shoppingList", include ONLY items NOT found in the user's pantry that are needed for the meals
 - Do NOT include basic pantry staples (salt, pepper, water, oil) in the shopping list
 - Be practical and create realistic, achievable meals
@@ -919,11 +925,11 @@ Rules:
           },
           {
             role: "user",
-            content: `Create a ${days}-day meal plan starting from ${startDate}. Here are the ingredients I currently have:\n\n${ingredientsList}\n\nGenerate meals that use these ingredients as much as possible, and list any additional items I'd need to buy.`
+            content: `Create a ${days}-day meal plan starting from ${startDate}. Here are the ingredients I currently have:\n\n${ingredientsList}\n\nGenerate meals that use these ingredients as much as possible. Include FULL recipes with measured ingredients, step-by-step instructions, prep/cook times, and serving sizes for every meal. Also list any additional items I'd need to buy.`
           }
         ],
         response_format: { type: "json_object" },
-        max_tokens: 4000,
+        max_tokens: 16000,
       });
 
       const content = response.choices[0]?.message?.content;

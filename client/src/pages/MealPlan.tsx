@@ -21,6 +21,10 @@ interface GeneratedMeal {
   name: string;
   description: string;
   ingredients: string[];
+  instructions?: string;
+  prepTime?: string;
+  cookTime?: string;
+  servings?: string;
 }
 
 interface ShoppingItem {
@@ -62,6 +66,7 @@ export default function MealPlan() {
 
   const [viewingRecipe, setViewingRecipe] = useState<Recipe | null>(null);
   const [viewingCustomMeal, setViewingCustomMeal] = useState<{ name: string; notes: string; mealType: string } | null>(null);
+  const [viewingGeneratedMeal, setViewingGeneratedMeal] = useState<GeneratedMeal | null>(null);
 
   const [showAiDialog, setShowAiDialog] = useState(false);
   const [aiDays, setAiDays] = useState(7);
@@ -149,10 +154,14 @@ export default function MealPlan() {
   const [savedGenToBook, setSavedGenToBook] = useState<Set<number>>(new Set());
 
   const saveToRecipeBookMutation = useMutation({
-    mutationFn: async ({ title, description, ingredients, mealType, mealId, isGenerated }: {
+    mutationFn: async ({ title, description, ingredients, instructions, prepTime, cookTime, servings, mealType, mealId, isGenerated }: {
       title: string;
       description: string;
       ingredients: string[];
+      instructions?: string;
+      prepTime?: string;
+      cookTime?: string;
+      servings?: string;
       mealType: string;
       mealId: number;
       isGenerated?: boolean;
@@ -164,7 +173,10 @@ export default function MealPlan() {
           title,
           description,
           ingredients,
-          instructions: "",
+          instructions: instructions || "",
+          prepTime: prepTime || "",
+          cookTime: cookTime || "",
+          servings: servings || "",
           category: mealType,
           source: "Meal Plan",
         }),
@@ -241,13 +253,32 @@ export default function MealPlan() {
     });
   };
 
-  const handleSaveMeal = async (meal: GeneratedMeal, index: number) => {
+  const saveMealAsRecipeAndPlan = async (meal: GeneratedMeal) => {
+    const recipeRes = await apiRequest("POST", "/api/recipes", {
+      title: meal.name,
+      description: meal.description || "",
+      ingredients: meal.ingredients || [],
+      instructions: meal.instructions || "",
+      prepTime: meal.prepTime || "",
+      cookTime: meal.cookTime || "",
+      servings: meal.servings || "",
+      category: meal.mealType === "snack" ? "snack" : meal.mealType,
+      source: "AI Meal Plan",
+    });
+    const recipe = await recipeRes.json();
     await addMealPlan.mutateAsync({
       date: meal.date,
       mealType: meal.mealType,
+      recipeId: recipe.id,
       customMealName: meal.name,
       notes: meal.description,
     });
+    queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
+    return recipe;
+  };
+
+  const handleSaveMeal = async (meal: GeneratedMeal, index: number) => {
+    await saveMealAsRecipeAndPlan(meal);
     setSavedMeals(prev => new Set(prev).add(index));
     toast({
       title: "Meal Added",
@@ -261,12 +292,7 @@ export default function MealPlan() {
     for (let i = 0; i < generatedPlan.meals.length; i++) {
       if (savedMeals.has(i)) continue;
       const meal = generatedPlan.meals[i];
-      await addMealPlan.mutateAsync({
-        date: meal.date,
-        mealType: meal.mealType,
-        customMealName: meal.name,
-        notes: meal.description,
-      });
+      await saveMealAsRecipeAndPlan(meal);
       setSavedMeals(prev => new Set(prev).add(i));
       count++;
     }
@@ -862,7 +888,13 @@ export default function MealPlan() {
                                     <Icon className="h-4 w-4" />
                                   </div>
                                   <div className="min-w-0">
-                                    <div className="text-sm font-medium truncate">{meal.name}</div>
+                                    <button
+                                      className="text-sm font-medium truncate text-left hover:text-primary transition-colors cursor-pointer block w-full"
+                                      onClick={() => setViewingGeneratedMeal(meal)}
+                                      data-testid={`button-view-gen-meal-${mealIndex}`}
+                                    >
+                                      {meal.name}
+                                    </button>
                                     <div className="text-xs text-muted-foreground capitalize">{meal.mealType}</div>
                                     {meal.description && (
                                       <p className="text-xs text-muted-foreground mt-1">{meal.description}</p>
@@ -880,6 +912,10 @@ export default function MealPlan() {
                                           title: meal.name,
                                           description: meal.description || "",
                                           ingredients: meal.ingredients,
+                                          instructions: meal.instructions,
+                                          prepTime: meal.prepTime,
+                                          cookTime: meal.cookTime,
+                                          servings: meal.servings,
                                           mealType: meal.mealType,
                                           mealId: mealIndex,
                                           isGenerated: true,
@@ -1098,6 +1134,65 @@ export default function MealPlan() {
                   <p className="text-sm text-foreground whitespace-pre-wrap">{viewingCustomMeal.notes}</p>
                 ) : (
                   <p className="text-sm text-muted-foreground italic">No description available for this meal.</p>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!viewingGeneratedMeal} onOpenChange={(open) => { if (!open) setViewingGeneratedMeal(null); }}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          {viewingGeneratedMeal && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-xl font-serif">{viewingGeneratedMeal.name}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-2">
+                {viewingGeneratedMeal.description && (
+                  <p className="text-sm text-muted-foreground">{viewingGeneratedMeal.description}</p>
+                )}
+
+                <div className="flex gap-4 text-sm">
+                  {viewingGeneratedMeal.prepTime && (
+                    <div className="flex items-center gap-1 text-muted-foreground">
+                      <Clock size={14} />
+                      <span>Prep: {viewingGeneratedMeal.prepTime}</span>
+                    </div>
+                  )}
+                  {viewingGeneratedMeal.cookTime && (
+                    <div className="flex items-center gap-1 text-muted-foreground">
+                      <Clock size={14} />
+                      <span>Cook: {viewingGeneratedMeal.cookTime}</span>
+                    </div>
+                  )}
+                  {viewingGeneratedMeal.servings && (
+                    <div className="flex items-center gap-1 text-muted-foreground">
+                      <Users size={14} />
+                      <span>{viewingGeneratedMeal.servings}</span>
+                    </div>
+                  )}
+                </div>
+
+                {viewingGeneratedMeal.ingredients && viewingGeneratedMeal.ingredients.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-serif font-medium mb-2">Ingredients</h3>
+                    <ul className="space-y-1.5">
+                      {viewingGeneratedMeal.ingredients.map((ing, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-sm">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0"></span>
+                          <span>{ing}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {viewingGeneratedMeal.instructions && (
+                  <div>
+                    <h3 className="text-sm font-serif font-medium mb-2">Instructions</h3>
+                    <div className="prose prose-sm text-foreground whitespace-pre-wrap text-sm">{viewingGeneratedMeal.instructions}</div>
+                  </div>
                 )}
               </div>
             </>
