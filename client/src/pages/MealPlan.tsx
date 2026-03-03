@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronLeft, ChevronRight, Plus, Trash2, CalendarDays, UtensilsCrossed, Coffee, Sun, Moon, Cookie, ArrowLeft, Sparkles, ShoppingCart, Check, Loader2, X, RefreshCw, CheckSquare, BookPlus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trash2, CalendarDays, UtensilsCrossed, Coffee, Sun, Moon, Cookie, ArrowLeft, Sparkles, ShoppingCart, Check, Loader2, X, RefreshCw, CheckSquare, BookPlus, Clock, Users } from "lucide-react";
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isToday, parseISO, addDays } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiRequest } from "@/lib/queryClient";
@@ -59,6 +59,9 @@ export default function MealPlan() {
     customMealName: "",
     notes: "",
   });
+
+  const [viewingRecipe, setViewingRecipe] = useState<Recipe | null>(null);
+  const [viewingCustomMeal, setViewingCustomMeal] = useState<{ name: string; notes: string; mealType: string } | null>(null);
 
   const [showAiDialog, setShowAiDialog] = useState(false);
   const [aiDays, setAiDays] = useState(7);
@@ -483,17 +486,33 @@ export default function MealPlan() {
                                   key={meal.id}
                                   className="flex items-center justify-between p-2 rounded-lg bg-muted/50"
                                 >
-                                  <div className="flex items-center gap-2">
+                                  <button
+                                    className="flex items-center gap-2 text-left min-w-0 flex-1"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (meal.recipeId) {
+                                        const recipe = recipes.find(r => r.id === meal.recipeId);
+                                        if (recipe) setViewingRecipe(recipe);
+                                      } else {
+                                        setViewingCustomMeal({
+                                          name: meal.customMealName || "Untitled Meal",
+                                          notes: meal.notes || "",
+                                          mealType: meal.mealType,
+                                        });
+                                      }
+                                    }}
+                                    data-testid={`button-view-meal-${meal.id}`}
+                                  >
                                     <div className={`p-1.5 rounded ${colorClass}`}>
                                       <Icon className="h-4 w-4" />
                                     </div>
-                                    <div>
-                                      <div className="text-sm font-medium">
+                                    <div className="min-w-0">
+                                      <div className="text-sm font-medium text-primary underline-offset-2 hover:underline truncate">
                                         {meal.recipeId ? getRecipeTitle(meal.recipeId) : meal.customMealName}
                                       </div>
                                       <div className="text-xs text-muted-foreground capitalize">{meal.mealType}</div>
                                     </div>
-                                  </div>
+                                  </button>
                                   <div className="flex items-center gap-1">
                                     {!meal.recipeId && !savedToBook.has(meal.id) ? (
                                       <Button
@@ -1002,6 +1021,89 @@ export default function MealPlan() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <Dialog open={!!viewingRecipe} onOpenChange={(open) => { if (!open) setViewingRecipe(null); }}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          {viewingRecipe && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-xl font-serif">{viewingRecipe.title}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-2">
+                {viewingRecipe.description && (
+                  <p className="text-sm text-muted-foreground">{viewingRecipe.description}</p>
+                )}
+
+                <div className="flex gap-4 text-sm">
+                  {viewingRecipe.prepTime && (
+                    <div className="flex items-center gap-1 text-muted-foreground">
+                      <Clock size={14} />
+                      <span>Prep: {viewingRecipe.prepTime}</span>
+                    </div>
+                  )}
+                  {viewingRecipe.cookTime && (
+                    <div className="flex items-center gap-1 text-muted-foreground">
+                      <Clock size={14} />
+                      <span>Cook: {viewingRecipe.cookTime}</span>
+                    </div>
+                  )}
+                  {viewingRecipe.servings && (
+                    <div className="flex items-center gap-1 text-muted-foreground">
+                      <Users size={14} />
+                      <span>{viewingRecipe.servings}</span>
+                    </div>
+                  )}
+                </div>
+
+                {viewingRecipe.ingredients && viewingRecipe.ingredients.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-serif font-medium mb-2">Ingredients</h3>
+                    <ul className="space-y-1.5">
+                      {viewingRecipe.ingredients.filter(i => i.trim() && i !== "--").map((ing, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-sm">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0"></span>
+                          <span>{ing}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {viewingRecipe.instructions && (
+                  <div>
+                    <h3 className="text-sm font-serif font-medium mb-2">Instructions</h3>
+                    <div className="prose prose-sm text-foreground whitespace-pre-wrap text-sm">{viewingRecipe.instructions}</div>
+                  </div>
+                )}
+
+                {viewingRecipe.source && (
+                  <p className="text-xs text-muted-foreground">Source: {viewingRecipe.source}</p>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!viewingCustomMeal} onOpenChange={(open) => { if (!open) setViewingCustomMeal(null); }}>
+        <DialogContent className="max-w-md">
+          {viewingCustomMeal && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-xl font-serif">{viewingCustomMeal.name}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 pt-2">
+                <div className="text-xs text-muted-foreground capitalize">{viewingCustomMeal.mealType}</div>
+                {viewingCustomMeal.notes ? (
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{viewingCustomMeal.notes}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">No description available for this meal.</p>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
