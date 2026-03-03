@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronLeft, ChevronRight, Plus, Trash2, CalendarDays, UtensilsCrossed, Coffee, Sun, Moon, Cookie, ArrowLeft, Sparkles, ShoppingCart, Check, Loader2, X, RefreshCw, CheckSquare } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trash2, CalendarDays, UtensilsCrossed, Coffee, Sun, Moon, Cookie, ArrowLeft, Sparkles, ShoppingCart, Check, Loader2, X, RefreshCw, CheckSquare, BookPlus } from "lucide-react";
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isToday, parseISO, addDays } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiRequest } from "@/lib/queryClient";
@@ -139,6 +139,50 @@ export default function MealPlan() {
     },
     onError: () => {
       toast({ title: "Failed to update inventory", variant: "destructive" });
+    },
+  });
+
+  const [savedToBook, setSavedToBook] = useState<Set<number>>(new Set());
+  const [savedGenToBook, setSavedGenToBook] = useState<Set<number>>(new Set());
+
+  const saveToRecipeBookMutation = useMutation({
+    mutationFn: async ({ title, description, ingredients, mealType, mealId, isGenerated }: {
+      title: string;
+      description: string;
+      ingredients: string[];
+      mealType: string;
+      mealId: number;
+      isGenerated?: boolean;
+    }) => {
+      const res = await fetch("/api/recipes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          description,
+          ingredients,
+          instructions: "",
+          category: mealType,
+          source: "Meal Plan",
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to save recipe");
+      return { data: await res.json(), mealId, isGenerated };
+    },
+    onSuccess: ({ data, mealId, isGenerated }) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
+      if (isGenerated) {
+        setSavedGenToBook(prev => new Set(prev).add(mealId));
+      } else {
+        setSavedToBook(prev => new Set(prev).add(mealId));
+      }
+      toast({
+        title: "Saved to Recipe Book!",
+        description: `${data.title} has been added to your recipes.`,
+      });
+    },
+    onError: () => {
+      toast({ title: "Failed to save recipe", variant: "destructive" });
     },
   });
 
@@ -451,6 +495,30 @@ export default function MealPlan() {
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-1">
+                                    {!meal.recipeId && !savedToBook.has(meal.id) ? (
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-primary hover:text-primary"
+                                        onClick={() => {
+                                          saveToRecipeBookMutation.mutate({
+                                            title: meal.customMealName || "Untitled Meal",
+                                            description: meal.notes || "",
+                                            ingredients: [],
+                                            mealType: meal.mealType,
+                                            mealId: meal.id,
+                                          });
+                                        }}
+                                        disabled={saveToRecipeBookMutation.isPending}
+                                        data-testid={`button-save-recipe-${meal.id}`}
+                                      >
+                                        <BookPlus className="h-4 w-4" />
+                                      </Button>
+                                    ) : !meal.recipeId && savedToBook.has(meal.id) ? (
+                                      <div className="h-8 w-8 flex items-center justify-center text-green-600">
+                                        <Check className="h-4 w-4" />
+                                      </div>
+                                    ) : null}
                                     {!cookedMeals.has(meal.id) ? (
                                       <Button
                                         variant="ghost"
@@ -783,6 +851,31 @@ export default function MealPlan() {
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-1 flex-shrink-0">
+                                  {!savedGenToBook.has(mealIndex) ? (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-8 w-8 p-0 text-primary"
+                                      onClick={() => {
+                                        saveToRecipeBookMutation.mutate({
+                                          title: meal.name,
+                                          description: meal.description || "",
+                                          ingredients: meal.ingredients,
+                                          mealType: meal.mealType,
+                                          mealId: mealIndex,
+                                          isGenerated: true,
+                                        });
+                                      }}
+                                      disabled={saveToRecipeBookMutation.isPending}
+                                      data-testid={`button-save-recipe-gen-${mealIndex}`}
+                                    >
+                                      <BookPlus className="h-4 w-4" />
+                                    </Button>
+                                  ) : (
+                                    <div className="h-8 w-8 flex items-center justify-center text-green-600">
+                                      <Check className="h-4 w-4" />
+                                    </div>
+                                  )}
                                   {!cookedGenMeals.has(mealIndex) ? (
                                     <Button
                                       size="sm"
