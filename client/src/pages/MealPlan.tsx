@@ -518,10 +518,10 @@ export default function MealPlan() {
                               return (
                                 <div
                                   key={meal.id}
-                                  className="flex items-center justify-between p-2 rounded-lg bg-muted/50"
+                                  className="p-3 rounded-lg bg-muted/50 space-y-2"
                                 >
                                   <button
-                                    className="flex items-center gap-2 text-left min-w-0 flex-1"
+                                    className="flex items-center gap-2 text-left w-full"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       if (meal.recipeId) {
@@ -542,19 +542,19 @@ export default function MealPlan() {
                                     <div className={`p-1.5 rounded ${colorClass}`}>
                                       <Icon className="h-4 w-4" />
                                     </div>
-                                    <div className="min-w-0">
-                                      <div className="text-sm font-medium text-primary underline-offset-2 hover:underline truncate">
+                                    <div className="min-w-0 flex-1">
+                                      <div className="text-sm font-medium text-primary underline-offset-2 hover:underline">
                                         {meal.recipeId ? getRecipeTitle(meal.recipeId) : meal.customMealName}
                                       </div>
                                       <div className="text-xs text-muted-foreground capitalize">{meal.mealType}</div>
                                     </div>
                                   </button>
-                                  <div className="flex items-center gap-1">
+                                  <div className="flex items-center gap-1 pl-9">
                                     {!meal.recipeId && !savedToBook.has(meal.id) ? (
                                       <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 text-primary hover:text-primary"
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 text-xs gap-1 text-primary border-primary/30"
                                         onClick={() => {
                                           const rd = parseMealNotes(meal.notes);
                                           saveToRecipeBookMutation.mutate({
@@ -572,18 +572,19 @@ export default function MealPlan() {
                                         disabled={saveToRecipeBookMutation.isPending}
                                         data-testid={`button-save-recipe-${meal.id}`}
                                       >
-                                        <BookPlus className="h-4 w-4" />
+                                        <BookPlus className="h-3.5 w-3.5" />
+                                        Save
                                       </Button>
                                     ) : !meal.recipeId && savedToBook.has(meal.id) ? (
-                                      <div className="h-8 w-8 flex items-center justify-center text-green-600">
-                                        <Check className="h-4 w-4" />
-                                      </div>
+                                      <span className="text-xs text-green-600 flex items-center gap-1 px-2">
+                                        <Check className="h-3.5 w-3.5" /> Saved
+                                      </span>
                                     ) : null}
                                     {!cookedMeals.has(meal.id) ? (
                                       <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 text-primary hover:text-primary"
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-7 text-xs gap-1 text-primary border-primary/30"
                                         onClick={() => {
                                           const recipe = meal.recipeId ? recipes.find(r => r.id === meal.recipeId) : null;
                                           const rd = parseMealNotes(meal.notes);
@@ -597,21 +598,22 @@ export default function MealPlan() {
                                         disabled={markCookedMutation.isPending}
                                         data-testid={`button-cooked-meal-${meal.id}`}
                                       >
-                                        <CheckSquare className="h-4 w-4" />
+                                        <CheckSquare className="h-3.5 w-3.5" />
+                                        Cooked
                                       </Button>
                                     ) : (
-                                      <div className="h-8 w-8 flex items-center justify-center text-primary">
-                                        <Check className="h-4 w-4" />
-                                      </div>
+                                      <span className="text-xs text-primary flex items-center gap-1 px-2">
+                                        <Check className="h-3.5 w-3.5" /> Cooked
+                                      </span>
                                     )}
                                     <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8 text-destructive hover:text-destructive"
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-7 text-xs gap-1 text-destructive border-destructive/30 ml-auto"
                                       onClick={() => deleteMealPlan.mutate(meal.id)}
                                       data-testid={`delete-meal-${meal.id}`}
                                     >
-                                      <Trash2 className="h-4 w-4" />
+                                      <Trash2 className="h-3.5 w-3.5" />
                                     </Button>
                                   </div>
                                 </div>
@@ -898,94 +900,95 @@ export default function MealPlan() {
                               }`}
                               data-testid={`generated-meal-${mealIndex}`}
                             >
-                              <div className="flex items-start justify-between">
-                                <div className="flex items-start gap-2 flex-1 min-w-0">
-                                  <div className={`p-1.5 rounded flex-shrink-0 ${colorClass}`}>
-                                    <Icon className="h-4 w-4" />
-                                  </div>
-                                  <div className="min-w-0">
-                                    <button
-                                      className="text-sm font-medium truncate text-left hover:text-primary transition-colors cursor-pointer block w-full"
-                                      onClick={() => setViewingGeneratedMeal(meal)}
-                                      data-testid={`button-view-gen-meal-${mealIndex}`}
-                                    >
-                                      {meal.name}
-                                    </button>
-                                    <div className="text-xs text-muted-foreground capitalize">{meal.mealType}</div>
-                                    {meal.description && (
-                                      <p className="text-xs text-muted-foreground mt-1">{meal.description}</p>
-                                    )}
-                                  </div>
+                              <button
+                                className="flex items-start gap-2 text-left w-full"
+                                onClick={() => setViewingGeneratedMeal(meal)}
+                                data-testid={`button-view-gen-meal-${mealIndex}`}
+                              >
+                                <div className={`p-1.5 rounded flex-shrink-0 ${colorClass}`}>
+                                  <Icon className="h-4 w-4" />
                                 </div>
-                                <div className="flex items-center gap-1 flex-shrink-0">
-                                  {!savedGenToBook.has(mealIndex) ? (
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-8 w-8 p-0 text-primary"
-                                      onClick={() => {
-                                        saveToRecipeBookMutation.mutate({
-                                          title: meal.name,
-                                          description: meal.description || "",
-                                          ingredients: meal.ingredients,
-                                          instructions: meal.instructions,
-                                          prepTime: meal.prepTime,
-                                          cookTime: meal.cookTime,
-                                          servings: meal.servings,
-                                          mealType: meal.mealType,
-                                          mealId: mealIndex,
-                                          isGenerated: true,
-                                        });
-                                      }}
-                                      disabled={saveToRecipeBookMutation.isPending}
-                                      data-testid={`button-save-recipe-gen-${mealIndex}`}
-                                    >
-                                      <BookPlus className="h-4 w-4" />
-                                    </Button>
-                                  ) : (
-                                    <div className="h-8 w-8 flex items-center justify-center text-green-600">
-                                      <Check className="h-4 w-4" />
-                                    </div>
-                                  )}
-                                  {!cookedGenMeals.has(mealIndex) ? (
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-8 w-8 p-0 text-primary"
-                                      onClick={() => {
-                                        if (meal.ingredients.length > 0) {
-                                          markCookedMutation.mutate({ ingredients: meal.ingredients, mealId: mealIndex, isGenerated: true });
-                                        } else {
-                                          toast({ title: "No ingredients found for this meal" });
-                                        }
-                                      }}
-                                      disabled={markCookedMutation.isPending}
-                                      data-testid={`button-cooked-gen-${mealIndex}`}
-                                    >
-                                      <CheckSquare className="h-4 w-4" />
-                                    </Button>
-                                  ) : (
-                                    <div className="h-8 w-8 flex items-center justify-center text-green-600">
-                                      <Check className="h-4 w-4" />
-                                    </div>
-                                  )}
-                                  {!isSaved ? (
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      className="h-8 w-8 p-0 text-primary"
-                                      onClick={() => handleSaveMeal(meal, mealIndex)}
-                                      disabled={addMealPlan.isPending}
-                                      data-testid={`button-save-meal-${mealIndex}`}
-                                    >
-                                      <Plus className="h-4 w-4" />
-                                    </Button>
-                                  ) : (
-                                    <div className="h-8 w-8 flex items-center justify-center text-primary">
-                                      <Check className="h-4 w-4" />
-                                    </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="text-sm font-medium hover:text-primary transition-colors">
+                                    {meal.name}
+                                  </div>
+                                  <div className="text-xs text-muted-foreground capitalize">{meal.mealType}</div>
+                                  {meal.description && (
+                                    <p className="text-xs text-muted-foreground mt-1">{meal.description}</p>
                                   )}
                                 </div>
+                              </button>
+                              <div className="flex items-center gap-1.5 pl-9 flex-wrap">
+                                {!savedGenToBook.has(mealIndex) ? (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 text-xs gap-1 text-primary border-primary/30"
+                                    onClick={() => {
+                                      saveToRecipeBookMutation.mutate({
+                                        title: meal.name,
+                                        description: meal.description || "",
+                                        ingredients: meal.ingredients,
+                                        instructions: meal.instructions,
+                                        prepTime: meal.prepTime,
+                                        cookTime: meal.cookTime,
+                                        servings: meal.servings,
+                                        mealType: meal.mealType,
+                                        mealId: mealIndex,
+                                        isGenerated: true,
+                                      });
+                                    }}
+                                    disabled={saveToRecipeBookMutation.isPending}
+                                    data-testid={`button-save-recipe-gen-${mealIndex}`}
+                                  >
+                                    <BookPlus className="h-3.5 w-3.5" />
+                                    Save
+                                  </Button>
+                                ) : (
+                                  <span className="text-xs text-green-600 flex items-center gap-1 px-2">
+                                    <Check className="h-3.5 w-3.5" /> Saved
+                                  </span>
+                                )}
+                                {!cookedGenMeals.has(mealIndex) ? (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 text-xs gap-1 text-primary border-primary/30"
+                                    onClick={() => {
+                                      if (meal.ingredients.length > 0) {
+                                        markCookedMutation.mutate({ ingredients: meal.ingredients, mealId: mealIndex, isGenerated: true });
+                                      } else {
+                                        toast({ title: "No ingredients found for this meal" });
+                                      }
+                                    }}
+                                    disabled={markCookedMutation.isPending}
+                                    data-testid={`button-cooked-gen-${mealIndex}`}
+                                  >
+                                    <CheckSquare className="h-3.5 w-3.5" />
+                                    Cooked
+                                  </Button>
+                                ) : (
+                                  <span className="text-xs text-green-600 flex items-center gap-1 px-2">
+                                    <Check className="h-3.5 w-3.5" /> Cooked
+                                  </span>
+                                )}
+                                {!isSaved ? (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 text-xs gap-1 text-primary border-primary/30"
+                                    onClick={() => handleSaveMeal(meal, mealIndex)}
+                                    disabled={addMealPlan.isPending}
+                                    data-testid={`button-save-meal-${mealIndex}`}
+                                  >
+                                    <Plus className="h-3.5 w-3.5" />
+                                    Add
+                                  </Button>
+                                ) : (
+                                  <span className="text-xs text-primary flex items-center gap-1 px-2">
+                                    <Check className="h-3.5 w-3.5" /> Added
+                                  </span>
+                                )}
                               </div>
                               {meal.ingredients.length > 0 && (
                                 <div className="flex flex-wrap gap-1 pl-9">
