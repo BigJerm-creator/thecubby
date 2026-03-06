@@ -956,6 +956,47 @@ Rules:
     }
   });
 
+  // Recipe Search (TheMealDB)
+  app.get("/api/recipe-search", isAuthenticated, async (req, res) => {
+    try {
+      const { q } = req.query;
+      if (!q || typeof q !== "string" || q.trim().length === 0) {
+        return res.json({ meals: [] });
+      }
+      const response = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(q.trim())}`);
+      if (!response.ok) {
+        return res.status(502).json({ error: "Recipe search service unavailable" });
+      }
+      const data = await response.json();
+      const meals = (data.meals || []).map((m: any) => {
+        const ingredients: string[] = [];
+        for (let i = 1; i <= 20; i++) {
+          const ing = m[`strIngredient${i}`];
+          const measure = m[`strMeasure${i}`];
+          if (ing && ing.trim()) {
+            const entry = measure && measure.trim() ? `${measure.trim()} ${ing.trim()}` : ing.trim();
+            ingredients.push(entry);
+          }
+        }
+        return {
+          id: m.idMeal,
+          title: m.strMeal,
+          category: m.strCategory,
+          area: m.strArea,
+          instructions: m.strInstructions,
+          thumbnail: m.strMealThumb,
+          ingredients,
+          source: m.strSource,
+          youtube: m.strYoutube,
+        };
+      });
+      res.json({ meals });
+    } catch (error) {
+      console.error("Recipe search error:", error);
+      res.status(500).json({ error: "Failed to search recipes" });
+    }
+  });
+
   // Meal Plan routes
   app.get("/api/meal-plans", isAuthenticated, async (req, res) => {
     try {

@@ -43,7 +43,8 @@ Preferred communication style: Simple, everyday language.
 - `GET /api/inventory/expired` - Expired items query
 - `GET/POST/PATCH/DELETE /api/shopping-list` - Shopping list management
 - `POST /api/generate-recipe` - AI recipe generation with streaming
-- `POST /api/generate-meal-plan` - AI meal plan generation (JSON mode, returns meals + shopping list for missing items)
+- `POST /api/generate-meal-plan` - AI meal plan generation (JSON mode, returns full recipes + shopping list for missing items)
+- `GET /api/recipe-search?q=` - Recipe search via TheMealDB (free, no API key required)
 - `GET/POST/PATCH/DELETE /api/recipes` - Recipe Book CRUD operations
 - `POST /api/recipes/parse-pdf` - Upload PDF and extract recipe using AI
 - `POST /api/recipes/parse-image` - Upload image and extract recipe using AI vision

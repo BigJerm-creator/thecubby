@@ -3,10 +3,24 @@ import { useLocation } from "wouter";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, ChefHat, Loader2, Sparkles, BookPlus, Check, CheckSquare } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ArrowLeft, ChefHat, Loader2, Sparkles, BookPlus, Check, CheckSquare, Search, Globe, Clock, Users, X } from "lucide-react";
 import { useInventory } from "@/lib/InventoryContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+
+interface SearchMeal {
+  id: string;
+  title: string;
+  category: string;
+  area: string;
+  instructions: string;
+  thumbnail: string;
+  ingredients: string[];
+  source: string;
+  youtube: string;
+}
 
 export default function RecipeGenerator() {
   const [, setLocation] = useLocation();
@@ -20,6 +34,14 @@ export default function RecipeGenerator() {
   const [error, setError] = useState<string | null>(null);
   const [isMarkedCooked, setIsMarkedCooked] = useState(false);
   const recipeRef = useRef<HTMLDivElement>(null);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchMeal[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [viewingMeal, setViewingMeal] = useState<SearchMeal | null>(null);
+  const [savedSearchRecipes, setSavedSearchRecipes] = useState<Set<string>>(new Set());
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const extractIngredients = (text: string): string[] => {
     const lines = text.split('\n');
@@ -68,6 +90,62 @@ export default function RecipeGenerator() {
       recipeRef.current.scrollTop = recipeRef.current.scrollHeight;
     }
   }, [recipe]);
+
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    };
+  }, []);
+
+  const searchRecipes = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setHasSearched(false);
+      return;
+    }
+    setIsSearching(true);
+    setHasSearched(true);
+    try {
+      const res = await fetch(`/api/recipe-search?q=${encodeURIComponent(query.trim())}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Search failed");
+      const data = await res.json();
+      setSearchResults(data.meals || []);
+    } catch {
+      setSearchResults([]);
+      toast({ title: "Recipe search failed", variant: "destructive" });
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSearchInput = (value: string) => {
+    setSearchQuery(value);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    if (value.trim().length >= 2) {
+      searchTimeoutRef.current = setTimeout(() => searchRecipes(value), 500);
+    } else {
+      setSearchResults([]);
+      setHasSearched(false);
+    }
+  };
+
+  const saveSearchRecipe = async (meal: SearchMeal) => {
+    try {
+      await apiRequest("POST", "/api/recipes", {
+        title: meal.title,
+        description: `${meal.area} ${meal.category}`.trim(),
+        ingredients: meal.ingredients,
+        instructions: meal.instructions,
+        category: (meal.category || "dinner").toLowerCase(),
+        source: meal.source || "TheMealDB",
+      });
+      setSavedSearchRecipes(prev => new Set(prev).add(meal.id));
+      queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
+      toast({ title: "Recipe saved to your Recipe Book!" });
+    } catch {
+      toast({ title: "Failed to save recipe", variant: "destructive" });
+    }
+  };
 
   const generateRecipe = async () => {
     setIsGenerating(true);
@@ -231,6 +309,70 @@ export default function RecipeGenerator() {
         </header>
 
         <Card className="bg-card/95 backdrop-blur-sm border-primary/20 shadow-md">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <h2 className="text-sm font-serif font-medium text-foreground">Search Recipes</h2>
+            </div>
+            <div className="relative">
+              <Input
+                placeholder="Search by name (e.g. chicken, pasta, curry...)"
+                value={searchQuery}
+                onChange={(e) => handleSearchInput(e.target.value)}
+                className="pr-8"
+                data-testid="input-recipe-search"
+              />
+              {searchQuery && (
+                <button
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => { setSearchQuery(""); setSearchResults([]); setHasSearched(false); }}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            {isSearching && (
+              <div className="flex items-center justify-center gap-2 py-4 text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm">Searching...</span>
+              </div>
+            )}
+
+            {!isSearching && hasSearched && searchResults.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-3">No recipes found. Try a different search.</p>
+            )}
+
+            {searchResults.length > 0 && (
+              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                {searchResults.map((meal) => (
+                  <div
+                    key={meal.id}
+                    className="flex items-center gap-3 p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
+                    onClick={() => setViewingMeal(meal)}
+                    data-testid={`search-result-${meal.id}`}
+                  >
+                    {meal.thumbnail && (
+                      <img
+                        src={`${meal.thumbnail}/preview`}
+                        alt={meal.title}
+                        className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+                      />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium truncate">{meal.title}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {[meal.area, meal.category].filter(Boolean).join(" · ")}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card/95 backdrop-blur-sm border-primary/20 shadow-md">
           <CardContent className="p-6 text-center">
             <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4">
               <ChefHat className="h-8 w-8 text-primary" />
@@ -350,6 +492,96 @@ export default function RecipeGenerator() {
           </Card>
         )}
       </div>
+
+      <Dialog open={!!viewingMeal} onOpenChange={(open) => { if (!open) setViewingMeal(null); }}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          {viewingMeal && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-xl font-serif">{viewingMeal.title}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-2">
+                {viewingMeal.thumbnail && (
+                  <img
+                    src={viewingMeal.thumbnail}
+                    alt={viewingMeal.title}
+                    className="w-full h-48 object-cover rounded-lg"
+                  />
+                )}
+
+                <div className="flex flex-wrap gap-2 text-xs">
+                  {viewingMeal.area && (
+                    <span className="px-2 py-1 rounded-full bg-primary/10 text-primary flex items-center gap-1">
+                      <Globe className="h-3 w-3" />
+                      {viewingMeal.area}
+                    </span>
+                  )}
+                  {viewingMeal.category && (
+                    <span className="px-2 py-1 rounded-full bg-muted text-muted-foreground">
+                      {viewingMeal.category}
+                    </span>
+                  )}
+                </div>
+
+                {viewingMeal.ingredients.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-serif font-medium mb-2">Ingredients</h3>
+                    <ul className="space-y-1.5">
+                      {viewingMeal.ingredients.map((ing, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-sm">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 flex-shrink-0"></span>
+                          <span>{ing}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {viewingMeal.instructions && (
+                  <div>
+                    <h3 className="text-sm font-serif font-medium mb-2">Instructions</h3>
+                    <div className="prose prose-sm text-foreground whitespace-pre-wrap text-sm">
+                      {viewingMeal.instructions}
+                    </div>
+                  </div>
+                )}
+
+                {viewingMeal.source && (
+                  <a
+                    href={viewingMeal.source}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-primary hover:underline flex items-center gap-1"
+                  >
+                    <Globe className="h-3 w-3" />
+                    View Original Source
+                  </a>
+                )}
+
+                <Button
+                  onClick={() => saveSearchRecipe(viewingMeal)}
+                  disabled={savedSearchRecipes.has(viewingMeal.id)}
+                  variant={savedSearchRecipes.has(viewingMeal.id) ? "outline" : "default"}
+                  className="w-full gap-2"
+                  data-testid="button-save-search-recipe"
+                >
+                  {savedSearchRecipes.has(viewingMeal.id) ? (
+                    <>
+                      <Check className="h-4 w-4" />
+                      Saved to Recipe Book
+                    </>
+                  ) : (
+                    <>
+                      <BookPlus className="h-4 w-4" />
+                      Save to Recipe Book
+                    </>
+                  )}
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
