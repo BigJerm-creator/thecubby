@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
+import Layout from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, ChefHat, Loader2, Sparkles, BookPlus, Check, CheckSquare, Search, Globe, Clock, Users, X, Filter, UtensilsCrossed } from "lucide-react";
+import { ChefHat, Loader2, Sparkles, BookPlus, Check, CheckSquare, Search, Globe, Clock, Users, X, Filter, UtensilsCrossed } from "lucide-react";
 import { useInventory } from "@/lib/InventoryContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -339,21 +340,11 @@ export default function RecipeGenerator() {
   };
 
   return (
-    <div className="min-h-screen p-6">
-      <div className="max-w-md mx-auto space-y-6">
-        <header className="flex items-center gap-4 bg-card/95 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-border/50">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setLocation("/")}
-            data-testid="button-back"
-          >
-            <ArrowLeft className="h-6 w-6" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Recipe Generator</h1>
-            <p className="text-sm text-muted-foreground">AI-powered recipes from your pantry</p>
-          </div>
+    <Layout>
+      <div className="space-y-6">
+        <header className="pt-4 pb-2">
+          <h1 className="text-3xl font-serif text-foreground">Recipe Generator</h1>
+          <p className="text-muted-foreground text-sm mt-1">AI-powered recipes from your pantry</p>
         </header>
 
         <Card className="bg-card/95 backdrop-blur-sm border-primary/20 shadow-md">
@@ -704,6 +695,6 @@ export default function RecipeGenerator() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </Layout>
   );
 }

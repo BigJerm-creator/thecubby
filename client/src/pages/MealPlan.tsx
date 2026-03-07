@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
+import Layout from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { ChevronLeft, ChevronRight, Plus, Trash2, CalendarDays, UtensilsCrossed, Coffee, Sun, Moon, Cookie, ArrowLeft, Sparkles, ShoppingCart, Check, Loader2, X, RefreshCw, CheckSquare, BookPlus, Clock, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trash2, CalendarDays, UtensilsCrossed, Coffee, Sun, Moon, Cookie, Sparkles, ShoppingCart, Check, Loader2, X, RefreshCw, CheckSquare, BookPlus, Clock, Users } from "lucide-react";
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isToday, parseISO, addDays } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiRequest } from "@/lib/queryClient";
@@ -383,38 +384,29 @@ export default function MealPlan() {
   }, {} as Record<string, (GeneratedMeal & { _index: number })[]>);
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <div className="max-w-4xl mx-auto p-4 space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+    <Layout>
+      <div className="space-y-4">
+        <header className="pt-4 pb-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-serif text-foreground">Meal Plan</h1>
+              <p className="text-muted-foreground text-sm mt-1">Plan your meals for the week</p>
+            </div>
             <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setLocation("/")}
-              className="h-9 w-9"
-              data-testid="button-back-home"
+              onClick={() => {
+                setGeneratedPlan(null);
+                setSavedMeals(new Set());
+                setAddedShoppingItems(new Set());
+                setShowAiDialog(true);
+              }}
+              className="gap-2"
+              data-testid="button-ai-meal-plan"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <Sparkles className="h-4 w-4" />
+              AI Generate
             </Button>
-            <h1 className="text-2xl font-serif font-bold text-foreground flex items-center gap-2">
-              <CalendarDays className="h-6 w-6 text-primary" />
-              Meal Plan
-            </h1>
           </div>
-          <Button
-            onClick={() => {
-              setGeneratedPlan(null);
-              setSavedMeals(new Set());
-              setAddedShoppingItems(new Set());
-              setShowAiDialog(true);
-            }}
-            className="gap-2"
-            data-testid="button-ai-meal-plan"
-          >
-            <Sparkles className="h-4 w-4" />
-            AI Generate
-          </Button>
-        </div>
+        </header>
 
         <Card className="bg-card/95 backdrop-blur-sm shadow-md">
           <CardHeader className="pb-2">
@@ -733,7 +725,6 @@ export default function MealPlan() {
             </div>
           </CardContent>
         </Card>
-      </div>
 
       <AnimatePresence>
         {showAiDialog && (
@@ -1263,6 +1254,7 @@ export default function MealPlan() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </Layout>
   );
 }
