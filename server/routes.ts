@@ -956,44 +956,149 @@ Rules:
     }
   });
 
-  // Recipe Search (TheMealDB)
+  // Recipe Search (TheMealDB) - helper to normalize full meal objects
+  function normalizeMeal(m: any) {
+    const ingredients: string[] = [];
+    for (let i = 1; i <= 20; i++) {
+      const ing = m[`strIngredient${i}`];
+      const measure = m[`strMeasure${i}`];
+      if (ing && ing.trim()) {
+        const entry = measure && measure.trim() ? `${measure.trim()} ${ing.trim()}` : ing.trim();
+        ingredients.push(entry);
+      }
+    }
+    return {
+      id: m.idMeal,
+      title: m.strMeal,
+      category: m.strCategory || "",
+      area: m.strArea || "",
+      instructions: m.strInstructions || "",
+      thumbnail: m.strMealThumb || "",
+      ingredients,
+      source: m.strSource || "",
+      youtube: m.strYoutube || "",
+    };
+  }
+
+  // Lookup full meal details by IDs (batch)
+  async function lookupMealsByIds(ids: string[]) {
+    const results = await Promise.all(
+      ids.map(async (id) => {
+        try {
+          const r = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${id}`);
+          if (!r.ok) return null;
+          const d = await r.json();
+          return d.meals?.[0] ? normalizeMeal(d.meals[0]) : null;
+        } catch { return null; }
+      })
+    );
+    return results.filter(Boolean);
+  }
+
+  // Main search: searches by name AND by ingredient, merges & deduplicates
   app.get("/api/recipe-search", isAuthenticated, async (req, res) => {
     try {
-      const { q } = req.query;
+      const { q, category, area } = req.query;
+
+      // Browse by category
+      if (category && typeof category === "string" && category.trim()) {
+        const r = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?c=${encodeURIComponent(category.trim())}`);
+        if (!r.ok) return res.status(502).json({ error: "Recipe search service unavailable" });
+        const d = await r.json();
+        const stubs = d.meals || [];
+        const ids = stubs.slice(0, 20).map((s: any) => s.idMeal);
+        const meals = await lookupMealsByIds(ids);
+        return res.json({ meals });
+      }
+
+      // Browse by area/cuisine
+      if (area && typeof area === "string" && area.trim()) {
+        const r = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?a=${encodeURIComponent(area.trim())}`);
+        if (!r.ok) return res.status(502).json({ error: "Recipe search service unavailable" });
+        const d = await r.json();
+        const stubs = d.meals || [];
+        const ids = stubs.slice(0, 20).map((s: any) => s.idMeal);
+        const meals = await lookupMealsByIds(ids);
+        return res.json({ meals });
+      }
+
       if (!q || typeof q !== "string" || q.trim().length === 0) {
         return res.json({ meals: [] });
       }
-      const response = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(q.trim())}`);
-      if (!response.ok) {
-        return res.status(502).json({ error: "Recipe search service unavailable" });
-      }
-      const data = await response.json();
-      const meals = (data.meals || []).map((m: any) => {
-        const ingredients: string[] = [];
-        for (let i = 1; i <= 20; i++) {
-          const ing = m[`strIngredient${i}`];
-          const measure = m[`strMeasure${i}`];
-          if (ing && ing.trim()) {
-            const entry = measure && measure.trim() ? `${measure.trim()} ${ing.trim()}` : ing.trim();
-            ingredients.push(entry);
+
+      const query = q.trim();
+
+      // Search by name and by ingredient in parallel
+      const [nameRes, ingredientRes] = await Promise.all([
+        fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${encodeURIComponent(query)}`).catch(() => null),
+        fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?i=${encodeURIComponent(query)}`).catch(() => null),
+      ]);
+
+      const seenIds = new Set<string>();
+      const allMeals: any[] = [];
+
+      // Process name search results (full data)
+      if (nameRes && nameRes.ok) {
+        const nameData = await nameRes.json();
+        for (const m of nameData.meals || []) {
+          if (!seenIds.has(m.idMeal)) {
+            seenIds.add(m.idMeal);
+            allMeals.push(normalizeMeal(m));
           }
         }
-        return {
-          id: m.idMeal,
-          title: m.strMeal,
-          category: m.strCategory,
-          area: m.strArea,
-          instructions: m.strInstructions,
-          thumbnail: m.strMealThumb,
-          ingredients,
-          source: m.strSource,
-          youtube: m.strYoutube,
-        };
-      });
-      res.json({ meals });
+      }
+
+      // Process ingredient search results (stubs - need lookup for full details)
+      if (ingredientRes && ingredientRes.ok) {
+        const ingData = await ingredientRes.json();
+        const stubs = (ingData.meals || []).filter((s: any) => !seenIds.has(s.idMeal));
+        const idsToLookup = stubs.slice(0, 15).map((s: any) => s.idMeal);
+        if (idsToLookup.length > 0) {
+          const lookedUp = await lookupMealsByIds(idsToLookup);
+          for (const meal of lookedUp) {
+            if (meal && !seenIds.has(meal.id)) {
+              seenIds.add(meal.id);
+              allMeals.push(meal);
+            }
+          }
+        }
+      }
+
+      res.json({ meals: allMeals });
     } catch (error) {
       console.error("Recipe search error:", error);
       res.status(500).json({ error: "Failed to search recipes" });
+    }
+  });
+
+  // List available categories and areas for browsing
+  app.get("/api/recipe-search/filters", isAuthenticated, async (_req, res) => {
+    try {
+      const [catRes, areaRes] = await Promise.all([
+        fetch("https://www.themealdb.com/api/json/v1/1/list.php?c=list").catch(() => null),
+        fetch("https://www.themealdb.com/api/json/v1/1/list.php?a=list").catch(() => null),
+      ]);
+
+      const categories: string[] = [];
+      const areas: string[] = [];
+
+      if (catRes && catRes.ok) {
+        const d = await catRes.json();
+        for (const c of d.meals || []) {
+          if (c.strCategory) categories.push(c.strCategory);
+        }
+      }
+      if (areaRes && areaRes.ok) {
+        const d = await areaRes.json();
+        for (const a of d.meals || []) {
+          if (a.strArea && a.strArea !== "Unknown") areas.push(a.strArea);
+        }
+      }
+
+      res.json({ categories, areas });
+    } catch (error) {
+      console.error("Recipe filters error:", error);
+      res.status(500).json({ error: "Failed to load filters" });
     }
   });
 

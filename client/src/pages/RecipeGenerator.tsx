@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ArrowLeft, ChefHat, Loader2, Sparkles, BookPlus, Check, CheckSquare, Search, Globe, Clock, Users, X } from "lucide-react";
+import { ArrowLeft, ChefHat, Loader2, Sparkles, BookPlus, Check, CheckSquare, Search, Globe, Clock, Users, X, Filter, UtensilsCrossed } from "lucide-react";
 import { useInventory } from "@/lib/InventoryContext";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
@@ -42,6 +42,10 @@ export default function RecipeGenerator() {
   const [viewingMeal, setViewingMeal] = useState<SearchMeal | null>(null);
   const [savedSearchRecipes, setSavedSearchRecipes] = useState<Set<string>>(new Set());
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [filters, setFilters] = useState<{ categories: string[]; areas: string[] }>({ categories: [], areas: [] });
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activeArea, setActiveArea] = useState<string | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
 
   const extractIngredients = (text: string): string[] => {
     const lines = text.split('\n');
@@ -97,6 +101,13 @@ export default function RecipeGenerator() {
     };
   }, []);
 
+  useEffect(() => {
+    fetch("/api/recipe-search/filters", { credentials: "include" })
+      .then(r => r.ok ? r.json() : { categories: [], areas: [] })
+      .then(d => setFilters(d))
+      .catch(() => {});
+  }, []);
+
   const searchRecipes = async (query: string) => {
     if (!query.trim()) {
       setSearchResults([]);
@@ -118,8 +129,45 @@ export default function RecipeGenerator() {
     }
   };
 
+  const browseByFilter = async (type: "category" | "area", value: string) => {
+    if (type === "category") {
+      setActiveCategory(prev => prev === value ? null : value);
+      setActiveArea(null);
+      if (activeCategory === value) {
+        setSearchResults([]);
+        setHasSearched(false);
+        return;
+      }
+    } else {
+      setActiveArea(prev => prev === value ? null : value);
+      setActiveCategory(null);
+      if (activeArea === value) {
+        setSearchResults([]);
+        setHasSearched(false);
+        return;
+      }
+    }
+    setSearchQuery("");
+    setIsSearching(true);
+    setHasSearched(true);
+    try {
+      const param = type === "category" ? `category=${encodeURIComponent(value)}` : `area=${encodeURIComponent(value)}`;
+      const res = await fetch(`/api/recipe-search?${param}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Browse failed");
+      const data = await res.json();
+      setSearchResults(data.meals || []);
+    } catch {
+      setSearchResults([]);
+      toast({ title: "Failed to load recipes", variant: "destructive" });
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   const handleSearchInput = (value: string) => {
     setSearchQuery(value);
+    setActiveCategory(null);
+    setActiveArea(null);
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     if (value.trim().length >= 2) {
       searchTimeoutRef.current = setTimeout(() => searchRecipes(value), 500);
@@ -310,13 +358,25 @@ export default function RecipeGenerator() {
 
         <Card className="bg-card/95 backdrop-blur-sm border-primary/20 shadow-md">
           <CardContent className="p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <h2 className="text-sm font-serif font-medium text-foreground">Search Recipes</h2>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <h2 className="text-sm font-serif font-medium text-foreground">Search Recipes</h2>
+              </div>
+              {(filters.categories.length > 0 || filters.areas.length > 0) && (
+                <button
+                  className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full transition-colors ${showFilters ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                  onClick={() => setShowFilters(!showFilters)}
+                  data-testid="button-toggle-filters"
+                >
+                  <Filter className="h-3 w-3" />
+                  Browse
+                </button>
+              )}
             </div>
             <div className="relative">
               <Input
-                placeholder="Search by name (e.g. chicken, pasta, curry...)"
+                placeholder="Search by name or ingredient..."
                 value={searchQuery}
                 onChange={(e) => handleSearchInput(e.target.value)}
                 className="pr-8"
@@ -325,12 +385,71 @@ export default function RecipeGenerator() {
               {searchQuery && (
                 <button
                   className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  onClick={() => { setSearchQuery(""); setSearchResults([]); setHasSearched(false); }}
+                  onClick={() => { setSearchQuery(""); setSearchResults([]); setHasSearched(false); setActiveCategory(null); setActiveArea(null); }}
                 >
                   <X className="h-4 w-4" />
                 </button>
               )}
             </div>
+
+            {showFilters && (
+              <div className="space-y-3 pt-1">
+                {filters.categories.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-1 mb-1.5">
+                      <UtensilsCrossed className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-xs font-medium text-muted-foreground">Category</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {filters.categories.map((cat) => (
+                        <button
+                          key={cat}
+                          className={`text-xs px-2.5 py-1 rounded-full transition-colors ${activeCategory === cat ? "bg-primary text-primary-foreground" : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+                          onClick={() => browseByFilter("category", cat)}
+                          data-testid={`filter-category-${cat}`}
+                        >
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {filters.areas.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-1 mb-1.5">
+                      <Globe className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-xs font-medium text-muted-foreground">Cuisine</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {filters.areas.map((area) => (
+                        <button
+                          key={area}
+                          className={`text-xs px-2.5 py-1 rounded-full transition-colors ${activeArea === area ? "bg-primary text-primary-foreground" : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+                          onClick={() => browseByFilter("area", area)}
+                          data-testid={`filter-area-${area}`}
+                        >
+                          {area}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {(activeCategory || activeArea) && !isSearching && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">
+                  Browsing: <span className="font-medium text-foreground">{activeCategory || activeArea}</span>
+                </span>
+                <button
+                  className="text-xs text-primary hover:underline"
+                  onClick={() => { setActiveCategory(null); setActiveArea(null); setSearchResults([]); setHasSearched(false); }}
+                >
+                  Clear
+                </button>
+              </div>
+            )}
 
             {isSearching && (
               <div className="flex items-center justify-center gap-2 py-4 text-muted-foreground">
@@ -340,33 +459,36 @@ export default function RecipeGenerator() {
             )}
 
             {!isSearching && hasSearched && searchResults.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-3">No recipes found. Try a different search.</p>
+              <p className="text-sm text-muted-foreground text-center py-3">No recipes found. Try a different search or browse by category.</p>
             )}
 
-            {searchResults.length > 0 && (
-              <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                {searchResults.map((meal) => (
-                  <div
-                    key={meal.id}
-                    className="flex items-center gap-3 p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
-                    onClick={() => setViewingMeal(meal)}
-                    data-testid={`search-result-${meal.id}`}
-                  >
-                    {meal.thumbnail && (
-                      <img
-                        src={`${meal.thumbnail}/preview`}
-                        alt={meal.title}
-                        className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
-                      />
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium truncate">{meal.title}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {[meal.area, meal.category].filter(Boolean).join(" · ")}
+            {!isSearching && searchResults.length > 0 && (
+              <div>
+                <p className="text-xs text-muted-foreground mb-2">{searchResults.length} recipe{searchResults.length !== 1 ? "s" : ""} found</p>
+                <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                  {searchResults.map((meal) => (
+                    <div
+                      key={meal.id}
+                      className="flex items-center gap-3 p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer"
+                      onClick={() => setViewingMeal(meal)}
+                      data-testid={`search-result-${meal.id}`}
+                    >
+                      {meal.thumbnail && (
+                        <img
+                          src={`${meal.thumbnail}/preview`}
+                          alt={meal.title}
+                          className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+                        />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium truncate">{meal.title}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {[meal.area, meal.category].filter(Boolean).join(" · ")}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
           </CardContent>
