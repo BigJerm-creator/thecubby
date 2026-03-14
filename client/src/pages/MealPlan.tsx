@@ -732,17 +732,17 @@ export default function MealPlan() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+            className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
             onClick={() => {
               if (!generateMealPlan.isPending) setShowAiDialog(false);
             }}
           >
             <motion.div
-              initial={{ y: "100%", opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: "100%", opacity: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="bg-card w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl shadow-xl max-h-[90vh] overflow-hidden flex flex-col"
+              className="bg-card w-full max-w-lg rounded-2xl shadow-xl max-h-[85vh] overflow-hidden flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-5 border-b flex items-center justify-between flex-shrink-0">
@@ -761,17 +761,17 @@ export default function MealPlan() {
                 </Button>
               </div>
 
-              <div className="overflow-y-auto flex-1 p-5">
+              <div className="overflow-y-auto flex-1 p-4">
                 {!generatedPlan ? (
-                  <div className="space-y-5">
-                    <div className="space-y-2">
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
                       <Label className="text-sm font-medium">How many days?</Label>
                       <div className="flex gap-2">
                         {[3, 5, 7, 14].map((d) => (
                           <button
                             key={d}
                             onClick={() => setAiDays(d)}
-                            className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                            className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${
                               aiDays === d
                                 ? "bg-primary text-primary-foreground"
                                 : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -784,8 +784,8 @@ export default function MealPlan() {
                       </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Which meals to include?</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-sm font-medium">Which meals?</Label>
                       <div className="flex flex-wrap gap-2">
                         {(["breakfast", "lunch", "dinner", "snack"] as const).map((type) => {
                           const Icon = mealTypeIcons[type];
@@ -794,14 +794,14 @@ export default function MealPlan() {
                             <button
                               key={type}
                               onClick={() => toggleMealType(type)}
-                              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
                                 isSelected
                                   ? "bg-primary text-primary-foreground"
                                   : "bg-muted text-muted-foreground hover:bg-muted/80"
                               }`}
                               data-testid={`button-meal-type-${type}`}
                             >
-                              <Icon className="h-4 w-4" />
+                              <Icon className="h-3.5 w-3.5" />
                               <span className="capitalize">{type}</span>
                             </button>
                           );
@@ -810,11 +810,11 @@ export default function MealPlan() {
                     </div>
 
                     <p className="text-xs text-muted-foreground">
-                      The AI will create meals based on what's in your pantry and suggest a shopping list for anything you'll need to buy.
+                      Creates meals from your pantry and suggests what to buy.
                     </p>
 
                     <Button
-                      className="w-full gap-2 h-12 text-base"
+                      className="w-full gap-2 h-11"
                       onClick={() => generateMealPlan.mutate()}
                       disabled={generateMealPlan.isPending || aiMealTypes.length === 0}
                       data-testid="button-generate-plan"
