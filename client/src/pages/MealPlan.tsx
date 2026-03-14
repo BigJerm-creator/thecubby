@@ -732,7 +732,7 @@ export default function MealPlan() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+            className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center px-4 py-4 pb-20"
             onClick={() => {
               if (!generateMealPlan.isPending) setShowAiDialog(false);
             }}
@@ -742,7 +742,7 @@ export default function MealPlan() {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="bg-card w-full max-w-lg rounded-2xl shadow-xl max-h-[85vh] overflow-hidden flex flex-col"
+              className="bg-card w-full max-w-lg rounded-2xl shadow-xl max-h-full overflow-hidden flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-5 border-b flex items-center justify-between flex-shrink-0">
