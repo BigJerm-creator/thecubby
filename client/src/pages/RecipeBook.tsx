@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import Layout from "@/components/layout";
-import { Book, Plus, Upload, Heart, Clock, Users, Trash2, ChevronRight, X, Loader2, Camera, CalendarPlus, CheckSquare, Check } from "lucide-react";
+import { Book, Plus, Upload, Heart, Clock, Users, Trash2, ChevronRight, X, Loader2, Camera, CalendarPlus, CheckSquare, Check, ShoppingCart, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,11 +12,40 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, addDays } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
+import { useInventory } from "@/lib/InventoryContext";
 import type { Recipe } from "@shared/schema";
+
+// Words to strip when matching ingredients to pantry (quantities, units, prep descriptors)
+const STRIP_WORDS = new Set([
+  "a","an","the","of","and","or","with","fresh","dried","ground","chopped","sliced","diced","minced",
+  "cup","cups","tbsp","tsp","tablespoon","tablespoons","teaspoon","teaspoons","oz","lb","lbs","g","kg",
+  "ml","l","liter","liters","ounce","ounces","pound","pounds","gram","grams","pinch","handful","clove",
+  "cloves","can","cans","jar","jars","package","packet","bag","bunch","piece","pieces","large","small",
+  "medium","whole","halved","shredded","grated","cooked","uncooked","raw","optional","to","taste",
+  "1","2","3","4","5","6","7","8","9","0","½","¼","¾","⅓","⅔",
+]);
+
+function ingredientKeywords(ingredient: string): string[] {
+  return ingredient
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter(w => w.length > 2 && !STRIP_WORDS.has(w));
+}
+
+function isIngredientInPantry(ingredient: string, allItems: { name: string }[]): boolean {
+  const keywords = ingredientKeywords(ingredient);
+  if (keywords.length === 0) return false;
+  return allItems.some(item => {
+    const itemWords = item.name.toLowerCase().split(/\s+/);
+    return keywords.some(kw => itemWords.some(iw => iw.includes(kw) || kw.includes(iw)));
+  });
+}
 
 export default function RecipeBook() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { inventory } = useInventory();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
@@ -37,6 +66,30 @@ export default function RecipeBook() {
     cookTime: "",
     servings: "",
     category: "dinner",
+  });
+
+  const allInventoryItems = Object.values(inventory).flat();
+
+  const addMissingToShoppingListMutation = useMutation({
+    mutationFn: async (missingIngredients: string[]) => {
+      for (const ingredient of missingIngredients) {
+        await apiRequest("POST", "/api/shopping-list", {
+          name: ingredient,
+          category: "Recipe Ingredients",
+          checked: false,
+        });
+      }
+    },
+    onSuccess: (_, missingIngredients) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/shopping-list"] });
+      toast({
+        title: "Added to shopping list",
+        description: `${missingIngredients.length} missing ingredient${missingIngredients.length > 1 ? "s" : ""} added.`,
+      });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to add ingredients to shopping list.", variant: "destructive" });
+    },
   });
 
   const { data: recipes = [], isLoading } = useQuery<Recipe[]>({
@@ -348,19 +401,63 @@ export default function RecipeBook() {
               )}
             </div>
 
-            {selectedRecipe.ingredients && selectedRecipe.ingredients.length > 0 && (
-              <div>
-                <h2 className="text-lg font-serif font-medium mb-3">Ingredients</h2>
-                <ul className="space-y-2">
-                  {selectedRecipe.ingredients.map((ing, idx) => (
-                    <li key={idx} className="flex items-start gap-2">
-                      <span className="w-2 h-2 rounded-full bg-primary mt-2 flex-shrink-0"></span>
-                      <span className="text-foreground">{ing}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            {selectedRecipe.ingredients && selectedRecipe.ingredients.length > 0 && (() => {
+              const validIngredients = selectedRecipe.ingredients.filter(i => i.trim() && i !== "--");
+              const missingIngredients = validIngredients.filter(ing => !isIngredientInPantry(ing, allInventoryItems));
+              return (
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-lg font-serif font-medium">Ingredients</h2>
+                    {missingIngredients.length > 0 && (
+                      <span className="text-xs text-amber-600 font-medium flex items-center gap-1">
+                        <AlertCircle size={13} />
+                        {missingIngredients.length} missing
+                      </span>
+                    )}
+                  </div>
+                  <ul className="space-y-2">
+                    {validIngredients.map((ing, idx) => {
+                      const inPantry = isIngredientInPantry(ing, allInventoryItems);
+                      return (
+                        <li key={idx} className="flex items-start gap-2">
+                          <span className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${inPantry ? "bg-green-500" : "bg-amber-400"}`}></span>
+                          <span className={`text-sm ${inPantry ? "text-foreground" : "text-foreground"}`}>{ing}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  {missingIngredients.length > 0 && (
+                    <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                      <p className="text-xs text-amber-700 mb-2 flex items-center gap-1">
+                        <AlertCircle size={12} />
+                        {missingIngredients.length} ingredient{missingIngredients.length > 1 ? "s" : ""} not found in your pantry
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="w-full gap-2 border-amber-300 text-amber-800 hover:bg-amber-100"
+                        disabled={addMissingToShoppingListMutation.isPending}
+                        onClick={() => addMissingToShoppingListMutation.mutate(missingIngredients)}
+                        data-testid="button-add-missing-to-shopping-list"
+                      >
+                        {addMissingToShoppingListMutation.isPending ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                          <ShoppingCart size={14} />
+                        )}
+                        Add Missing to Shopping List
+                      </Button>
+                    </div>
+                  )}
+                  {missingIngredients.length === 0 && validIngredients.length > 0 && (
+                    <p className="mt-2 text-xs text-green-600 flex items-center gap-1">
+                      <Check size={12} />
+                      All ingredients are in your pantry!
+                    </p>
+                  )}
+                </div>
+              );
+            })()}
 
             {selectedRecipe.instructions && (
               <div>
