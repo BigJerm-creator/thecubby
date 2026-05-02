@@ -71,7 +71,7 @@ export default function Settings() {
               <span className="text-muted-foreground">›</span>
             </button>
             <button 
-              onClick={() => handleMenuClick("Privacy & Security")}
+              onClick={() => setLocation("/privacy-security")}
               className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors text-left"
               data-testid="button-settings-privacy-security"
             >
