@@ -23,6 +23,7 @@ import RecipeBook from "@/pages/RecipeBook";
 import MealPlan from "@/pages/MealPlan";
 import Profile from "@/pages/Profile";
 import Appearance from "@/pages/Appearance";
+import Notifications from "@/pages/Notifications";
 
 function AuthenticatedRouter() {
   return (
@@ -40,6 +41,7 @@ function AuthenticatedRouter() {
           <Route path="/settings" component={Settings} />
           <Route path="/profile" component={Profile} />
           <Route path="/appearance" component={Appearance} />
+          <Route path="/notifications" component={Notifications} />
           <Route path="/recipes" component={RecipeGenerator} />
           <Route path="/recipe-book" component={RecipeBook} />
           <Route path="/meal-plan" component={MealPlan} />

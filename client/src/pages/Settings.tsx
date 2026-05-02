@@ -49,7 +49,7 @@ export default function Settings() {
           <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1">Preferences</h3>
           <div className="bg-card border border-border rounded-2xl overflow-hidden divide-y divide-border/50">
             <button 
-              onClick={() => handleMenuClick("Notifications")}
+              onClick={() => setLocation("/notifications")}
               className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors text-left"
               data-testid="button-settings-notifications"
             >
