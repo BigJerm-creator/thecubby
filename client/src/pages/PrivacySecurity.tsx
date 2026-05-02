@@ -137,10 +137,8 @@ function base64ToBytes(b64: string): Uint8Array {
 function detectBiometricLabel(): { label: string; Icon: typeof Fingerprint } {
   if (typeof navigator === "undefined") return { label: "Biometric", Icon: Fingerprint };
   const ua = navigator.userAgent;
-  if (/iPhone|iPad/.test(ua)) return { label: "Face ID / Touch ID", Icon: ScanFace };
-  if (/Mac/.test(ua)) return { label: "Touch ID", Icon: Fingerprint };
-  if (/Android/.test(ua)) return { label: "Fingerprint", Icon: Fingerprint };
-  if (/Windows/.test(ua)) return { label: "Windows Hello", Icon: ScanFace };
+  if (/iPhone|iPad|iPod/.test(ua)) return { label: "Face ID / Touch ID", Icon: ScanFace };
+  if (/Android/.test(ua)) return { label: "Fingerprint / Face Unlock", Icon: Fingerprint };
   return { label: "Biometric", Icon: Fingerprint };
 }
 
