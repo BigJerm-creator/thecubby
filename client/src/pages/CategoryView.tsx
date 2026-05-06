@@ -155,6 +155,156 @@ export default function CategoryView() {
 
   if (!category) return <Layout><div>Category not found</div></Layout>;
 
+  if (editingItem) {
+    return (
+      <Layout>
+        <div className="space-y-5 pb-4">
+          <div className="flex items-center justify-between pt-4 pb-2">
+            <button
+              onClick={() => setEditingItem(null)}
+              className="p-2 -ml-2 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground"
+              data-testid="button-close-edit"
+              aria-label="Back"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            <h1 className="text-lg font-serif font-medium text-foreground">Edit Item</h1>
+            <div className="w-9" />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-foreground block mb-2">Name *</label>
+            <input
+              type="text"
+              value={editForm.name}
+              onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+              className="w-full px-4 py-2 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              data-testid="input-edit-name"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-foreground block mb-2">Brand</label>
+            <input
+              type="text"
+              value={editForm.brand}
+              onChange={(e) => setEditForm(prev => ({ ...prev, brand: e.target.value }))}
+              className="w-full px-4 py-2 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              data-testid="input-edit-brand"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium text-foreground block mb-2">Quantity *</label>
+              <input
+                type="number"
+                min="0"
+                value={editForm.quantity}
+                onChange={(e) => setEditForm(prev => ({ ...prev, quantity: e.target.value }))}
+                className="w-full px-4 py-2 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                data-testid="input-edit-quantity"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground mb-2 flex items-center gap-1">
+                Low stock at
+                <span className="text-xs text-muted-foreground font-normal">(optional)</span>
+              </label>
+              <input
+                type="number"
+                min="0"
+                placeholder="e.g., 2"
+                value={editForm.lowStockThreshold}
+                onChange={(e) => setEditForm(prev => ({ ...prev, lowStockThreshold: e.target.value }))}
+                className="w-full px-4 py-2 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                data-testid="input-edit-low-stock"
+              />
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground -mt-3">
+            Get an alert when quantity drops to this number or below.
+          </p>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium text-foreground block mb-2">Size/Volume</label>
+              <input
+                type="number"
+                step="0.1"
+                min="0"
+                value={editForm.amount}
+                onChange={(e) => setEditForm(prev => ({ ...prev, amount: e.target.value }))}
+                className="w-full px-4 py-2 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                data-testid="input-edit-amount"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground block mb-2">Unit</label>
+              <select
+                value={editForm.amountUnit}
+                onChange={(e) => setEditForm(prev => ({ ...prev, amountUnit: e.target.value }))}
+                className="w-full px-4 py-2 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+                data-testid="select-edit-amount-unit"
+              >
+                {UNIT_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-foreground block mb-2">Expiry Date</label>
+            <input
+              type="date"
+              value={editForm.expiryDate}
+              onChange={(e) => setEditForm(prev => ({ ...prev, expiryDate: e.target.value }))}
+              className="w-full px-4 py-2 bg-card border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              data-testid="input-edit-expiry"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-foreground block mb-2">Category</label>
+            <div className="grid grid-cols-4 gap-2">
+              {KITCHEN_CATEGORIES.map(cat => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setEditForm(prev => ({ ...prev, category: cat.id }))}
+                  className={`flex flex-col items-center justify-center p-2 rounded-lg border-2 transition-all ${
+                    editForm.category === cat.id
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border bg-card hover:border-primary/50'
+                  }`}
+                  data-testid={`edit-category-${cat.id}`}
+                >
+                  <span className="text-xl mb-1">{cat.image}</span>
+                  <span className={`text-[10px] text-center leading-tight ${
+                    editForm.category === cat.id ? 'text-primary font-medium' : 'text-muted-foreground'
+                  }`}>{cat.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={() => setEditingItem(null)}
+              className="flex-1 py-3 rounded-xl border border-border text-foreground font-medium hover:bg-muted transition-colors"
+              data-testid="button-cancel-edit"
+            >Cancel</button>
+            <button
+              onClick={handleSaveEdit}
+              disabled={savingEdit}
+              className="flex-1 py-3 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+              data-testid="button-save-edit"
+            >{savingEdit ? "Saving..." : "Save Changes"}</button>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   if (isLoading) {
     return (
       <Layout>
@@ -275,179 +425,6 @@ export default function CategoryView() {
           )}
         </div>
       </div>
-
-      {/* Edit Dialog — absolute so it stays inside the phone frame on desktop preview */}
-      <AnimatePresence>
-        {editingItem && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-50 flex items-stretch justify-center"
-            onClick={() => setEditingItem(null)}
-          >
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="bg-card w-full md:max-w-md md:mx-auto h-full overflow-hidden flex flex-col shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="p-3 border-b border-border flex items-center gap-2 flex-shrink-0">
-                <button
-                  onClick={() => setEditingItem(null)}
-                  className="h-9 w-9 -ml-1 rounded-full hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                  data-testid="button-close-edit"
-                  aria-label="Back"
-                >
-                  <ArrowLeft size={18} />
-                </button>
-                <h3 className="font-serif text-base font-medium text-foreground flex-1 truncate">Edit Item</h3>
-                <button
-                  onClick={handleSaveEdit}
-                  disabled={savingEdit}
-                  className="px-3 py-1.5 rounded-lg text-sm font-bold text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
-                  data-testid="button-save-edit-top"
-                >
-                  {savingEdit ? "Saving..." : "Save"}
-                </button>
-              </div>
-
-              <div className="p-4 overflow-y-auto space-y-4 flex-1 min-h-0">
-                <div>
-                  <label className="text-sm font-medium text-foreground block mb-2">Name *</label>
-                  <input
-                    type="text"
-                    value={editForm.name}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                    data-testid="input-edit-name"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-foreground block mb-2">Brand</label>
-                  <input
-                    type="text"
-                    value={editForm.brand}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, brand: e.target.value }))}
-                    className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                    data-testid="input-edit-brand"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium text-foreground block mb-2">Quantity *</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={editForm.quantity}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, quantity: e.target.value }))}
-                      className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                      data-testid="input-edit-quantity"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground block mb-2 flex items-center gap-1">
-                      Low stock at
-                      <span className="text-xs text-muted-foreground font-normal">(optional)</span>
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      placeholder="e.g., 2"
-                      value={editForm.lowStockThreshold}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, lowStockThreshold: e.target.value }))}
-                      className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                      data-testid="input-edit-low-stock"
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground -mt-2">
-                  Get an alert when quantity drops to this number or below.
-                </p>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium text-foreground block mb-2">Size/Volume</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      value={editForm.amount}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, amount: e.target.value }))}
-                      className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                      data-testid="input-edit-amount"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground block mb-2">Unit</label>
-                    <select
-                      value={editForm.amountUnit}
-                      onChange={(e) => setEditForm(prev => ({ ...prev, amountUnit: e.target.value }))}
-                      className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
-                      data-testid="select-edit-amount-unit"
-                    >
-                      {UNIT_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-foreground block mb-2">Expiry Date</label>
-                  <input
-                    type="date"
-                    value={editForm.expiryDate}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, expiryDate: e.target.value }))}
-                    className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-                    data-testid="input-edit-expiry"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-foreground block mb-2">Category</label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {KITCHEN_CATEGORIES.map(cat => (
-                      <button
-                        key={cat.id}
-                        type="button"
-                        onClick={() => setEditForm(prev => ({ ...prev, category: cat.id }))}
-                        className={`flex flex-col items-center justify-center p-2 rounded-lg border-2 transition-all ${
-                          editForm.category === cat.id
-                            ? 'border-primary bg-primary/10'
-                            : 'border-border bg-card hover:border-primary/50'
-                        }`}
-                        data-testid={`edit-category-${cat.id}`}
-                      >
-                        <span className="text-xl mb-1">{cat.image}</span>
-                        <span className={`text-[10px] text-center leading-tight ${
-                          editForm.category === cat.id ? 'text-primary font-medium' : 'text-muted-foreground'
-                        }`}>{cat.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-4 border-t border-border flex gap-3 flex-shrink-0">
-                <button
-                  onClick={() => setEditingItem(null)}
-                  className="flex-1 py-2.5 rounded-xl border border-border text-foreground font-medium hover:bg-muted transition-colors"
-                  data-testid="button-cancel-edit"
-                >Cancel</button>
-                <button
-                  onClick={handleSaveEdit}
-                  disabled={savingEdit}
-                  className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
-                  data-testid="button-save-edit"
-                >{savingEdit ? "Saving..." : "Save Changes"}</button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <AnimatePresence>
         {removingItem && (
