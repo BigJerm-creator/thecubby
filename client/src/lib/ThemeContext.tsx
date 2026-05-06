@@ -33,7 +33,9 @@ import summerWallpaper5 from '@assets/generated_images/summer_ice_cream_wallpape
 export type ThemeMode = 'light' | 'dark';
 export type IconStyle = 'default' | 'rounded' | 'sharp' | 'playful';
 export type ColorTheme = 'farmhouse' | 'ocean' | 'sunset' | 'forest' | 'lavender' | 'midnight';
-export type Background = 'none' | 'christmas-1' | 'christmas-2' | 'christmas-3' | 'christmas-4' | 'christmas-5' | 'halloween-1' | 'halloween-2' | 'halloween-3' | 'halloween-4' | 'halloween-5' | 'thanksgiving-1' | 'thanksgiving-2' | 'thanksgiving-3' | 'thanksgiving-4' | 'thanksgiving-5' | 'easter-1' | 'easter-2' | 'easter-3' | 'easter-4' | 'easter-5' | 'valentines-1' | 'valentines-2' | 'valentines-3' | 'valentines-4' | 'valentines-5' | 'summer-1' | 'summer-2' | 'summer-3' | 'summer-4' | 'summer-5';
+export type Background = 'none' | 'custom' | 'christmas-1' | 'christmas-2' | 'christmas-3' | 'christmas-4' | 'christmas-5' | 'halloween-1' | 'halloween-2' | 'halloween-3' | 'halloween-4' | 'halloween-5' | 'thanksgiving-1' | 'thanksgiving-2' | 'thanksgiving-3' | 'thanksgiving-4' | 'thanksgiving-5' | 'easter-1' | 'easter-2' | 'easter-3' | 'easter-4' | 'easter-5' | 'valentines-1' | 'valentines-2' | 'valentines-3' | 'valentines-4' | 'valentines-5' | 'summer-1' | 'summer-2' | 'summer-3' | 'summer-4' | 'summer-5';
+
+const CUSTOM_BG_KEY = 'cubby_custom_background';
 
 interface ThemeSettings {
   themeMode: ThemeMode;
@@ -47,6 +49,8 @@ interface ThemeContextType extends ThemeSettings {
   setIconStyle: (style: IconStyle) => void;
   setColorTheme: (theme: ColorTheme) => void;
   setBackground: (bg: Background) => void;
+  customBackground: string | null;
+  setCustomBackground: (dataUrl: string | null) => boolean;
   saveSettings: () => Promise<void>;
   isLoading: boolean;
 }
@@ -62,7 +66,7 @@ const COLOR_THEMES: Record<ColorTheme, { primary: string; accent: string }> = {
   midnight: { primary: '230 50% 45%', accent: '220 40% 70%' },
 };
 
-const BACKGROUNDS: Record<Background, string> = {
+const BACKGROUNDS: Record<Exclude<Background, 'custom'>, string> = {
   none: '',
   'christmas-1': christmasWallpaper1,
   'christmas-2': christmasWallpaper2,
@@ -101,9 +105,15 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [iconStyle, setIconStyleState] = useState<IconStyle>('default');
   const [colorTheme, setColorThemeState] = useState<ColorTheme>('farmhouse');
   const [background, setBackgroundState] = useState<Background>('none');
+  const [customBackground, setCustomBackgroundState] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    try {
+      const stored = localStorage.getItem(CUSTOM_BG_KEY);
+      if (stored) setCustomBackgroundState(stored);
+    } catch {}
+
     fetch('/api/profile')
       .then(res => res.json())
       .then(data => {
@@ -131,11 +141,32 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--primary', colors.primary);
     root.style.setProperty('--accent', colors.accent);
     
-    const bg = BACKGROUNDS[background];
-    root.style.setProperty('--holiday-background', bg ? `url(${bg})` : 'none');
+    let bgUrl = '';
+    if (background === 'custom') {
+      bgUrl = customBackground || '';
+      if (!bgUrl && !isLoading) {
+        setBackgroundState('none');
+      }
+    } else {
+      bgUrl = BACKGROUNDS[background] || '';
+    }
+    const safeUrl = bgUrl.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+    root.style.setProperty('--holiday-background', bgUrl ? `url("${safeUrl}")` : 'none');
     
     root.setAttribute('data-icon-style', iconStyle);
-  }, [themeMode, colorTheme, background, iconStyle]);
+  }, [themeMode, colorTheme, background, iconStyle, customBackground, isLoading]);
+
+  const setCustomBackground = (dataUrl: string | null): boolean => {
+    try {
+      if (dataUrl) localStorage.setItem(CUSTOM_BG_KEY, dataUrl);
+      else localStorage.removeItem(CUSTOM_BG_KEY);
+      setCustomBackgroundState(dataUrl);
+      return true;
+    } catch (e) {
+      console.error('Failed to persist custom background', e);
+      return false;
+    }
+  };
 
   const saveSettings = async () => {
     const currentProfile = await fetch('/api/profile').then(res => res.json()) || {};
@@ -179,6 +210,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setIconStyle,
         setColorTheme,
         setBackground,
+        customBackground,
+        setCustomBackground,
         saveSettings,
         isLoading,
       }}

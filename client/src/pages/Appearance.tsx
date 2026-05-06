@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Layout from "@/components/layout";
-import { ArrowLeft, Sun, Moon, Check, Save, Sparkles, X } from "lucide-react";
+import { ArrowLeft, Sun, Moon, Check, Save, Sparkles, X, Upload, Trash2, ImagePlus } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { useTheme, type ThemeMode, type IconStyle, type ColorTheme, type Background } from "@/lib/ThemeContext";
+import { useTheme, type ThemeMode, type ColorTheme, type Background } from "@/lib/ThemeContext";
 import christmasWallpaper1 from '@assets/generated_images/christmas_themed_wallpaper.png';
 import christmasWallpaper2 from '@assets/generated_images/christmas_fireplace_wallpaper.png';
 import christmasWallpaper3 from '@assets/generated_images/christmas_gold_ornaments_wallpaper.png';
@@ -35,45 +35,6 @@ import summerWallpaper2 from '@assets/generated_images/summer_beach_sunset_wallp
 import summerWallpaper3 from '@assets/generated_images/summer_tropical_paradise_wallpaper.png';
 import summerWallpaper4 from '@assets/generated_images/summer_poolside_wallpaper.png';
 import summerWallpaper5 from '@assets/generated_images/summer_ice_cream_wallpaper.png';
-
-interface IconStyleConfig {
-  id: IconStyle;
-  label: string;
-  description: string;
-  containerClass: string;
-  previewEmojis: string[];
-}
-
-const ICON_STYLES: IconStyleConfig[] = [
-  {
-    id: "default",
-    label: "Christmas",
-    description: "Festive & merry",
-    containerClass: "bg-red-50 dark:bg-red-900/20 rounded-lg",
-    previewEmojis: ["🎄", "🎅", "⛄", "🎁"],
-  },
-  {
-    id: "rounded",
-    label: "Easter",
-    description: "Spring & pastel",
-    containerClass: "bg-purple-50 dark:bg-purple-900/20 rounded-full",
-    previewEmojis: ["🐣", "🐰", "🥚", "🌷"],
-  },
-  {
-    id: "sharp",
-    label: "Halloween",
-    description: "Spooky & fun",
-    containerClass: "bg-orange-50 dark:bg-orange-900/20 rounded-md",
-    previewEmojis: ["🎃", "👻", "🦇", "🕷️"],
-  },
-  {
-    id: "playful",
-    label: "Valentine's",
-    description: "Love & sweet",
-    containerClass: "bg-pink-50 dark:bg-pink-900/20 rounded-2xl",
-    previewEmojis: ["💕", "🌹", "🍫", "💝"],
-  },
-];
 
 const COLOR_THEMES: { id: ColorTheme; label: string; colors: string[] }[] = [
   { id: "farmhouse", label: "Modern Farmhouse", colors: ["#5D7052", "#E8E4DB"] },
@@ -158,18 +119,80 @@ export default function Appearance() {
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const {
     themeMode,
-    iconStyle,
     colorTheme,
     background,
     setThemeMode,
-    setIconStyle,
     setColorTheme,
     setBackground,
+    customBackground,
+    setCustomBackground,
     saveSettings,
     isLoading,
   } = useTheme();
+
+  const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
+
+  const handleUploadClick = () => fileInputRef.current?.click();
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Invalid file",
+        description: "Please choose an image file.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      toast({
+        title: "Image too large",
+        description: "Please choose an image under 4 MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result || "");
+      if (!dataUrl) return;
+      const ok = setCustomBackground(dataUrl);
+      if (!ok) {
+        toast({
+          title: "Couldn't save image",
+          description: "The image is too large for your browser's storage. Try a smaller one.",
+          variant: "destructive",
+        });
+        return;
+      }
+      setBackground("custom");
+      toast({
+        title: "Background uploaded",
+        description: "Tap Save to keep your new wallpaper.",
+      });
+    };
+    reader.onerror = () => {
+      toast({
+        title: "Couldn't read image",
+        description: "Try a different file.",
+        variant: "destructive",
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveCustom = () => {
+    setCustomBackground(null);
+    if (background === "custom") setBackground("none");
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -257,44 +280,6 @@ export default function Appearance() {
         </section>
 
         <section className="space-y-4">
-          <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1">Icon Style</h3>
-          <div className="bg-card border border-border rounded-2xl p-4">
-            <div className="grid grid-cols-2 gap-3">
-              {ICON_STYLES.map((style) => (
-                <button
-                  key={style.id}
-                  onClick={() => setIconStyle(style.id)}
-                  className={`relative flex flex-col items-center gap-3 p-4 rounded-xl border-2 transition-all ${
-                    iconStyle === style.id
-                      ? "border-primary bg-primary/10"
-                      : "border-border hover:border-primary/50"
-                  }`}
-                  data-testid={`button-icon-${style.id}`}
-                >
-                  {iconStyle === style.id && (
-                    <Check className="text-primary absolute top-2 right-2" size={14} />
-                  )}
-                  <div className="grid grid-cols-2 gap-2">
-                    {style.previewEmojis.map((emoji, idx) => (
-                      <div
-                        key={idx}
-                        className={`h-10 w-10 flex items-center justify-center text-xl ${style.containerClass}`}
-                      >
-                        {emoji}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="text-center">
-                    <span className="text-sm font-medium block">{style.label}</span>
-                    <span className="text-[10px] text-muted-foreground">{style.description}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="space-y-4">
           <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1">Color Theme</h3>
           <div className="bg-card border border-border rounded-2xl p-4">
             <div className="grid grid-cols-2 gap-3">
@@ -351,6 +336,79 @@ export default function Appearance() {
               <Check className="text-primary ml-auto" size={18} />
             )}
           </button>
+
+          <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <ImagePlus size={16} className="text-muted-foreground" />
+              <h4 className="font-medium text-sm">Your Wallpaper</h4>
+            </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange}
+              data-testid="input-custom-background"
+            />
+
+            {customBackground ? (
+              <div className="space-y-3">
+                <button
+                  onClick={() => setBackground("custom")}
+                  className={`relative w-full aspect-[16/9] rounded-xl overflow-hidden border-2 transition-all ${
+                    background === "custom"
+                      ? "border-primary ring-2 ring-primary/30"
+                      : "border-border hover:border-primary/50"
+                  }`}
+                  data-testid="button-bg-custom"
+                >
+                  <div
+                    className="absolute inset-0 bg-cover bg-center"
+                    style={{ backgroundImage: `url("${customBackground}")` }}
+                  />
+                  {background === "custom" && (
+                    <div className="absolute top-2 right-2 bg-primary text-primary-foreground rounded-full p-1">
+                      <Check size={12} />
+                    </div>
+                  )}
+                </button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleUploadClick}
+                    className="gap-2"
+                    data-testid="button-replace-custom-bg"
+                  >
+                    <Upload size={16} />
+                    Replace
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleRemoveCustom}
+                    className="gap-2 text-destructive hover:text-destructive"
+                    data-testid="button-remove-custom-bg"
+                  >
+                    <Trash2 size={16} />
+                    Remove
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleUploadClick}
+                className="w-full aspect-[16/9] rounded-xl border-2 border-dashed border-border hover:border-primary/50 hover:bg-muted/30 transition-all flex flex-col items-center justify-center gap-2 text-muted-foreground"
+                data-testid="button-upload-custom-bg"
+              >
+                <Upload size={24} />
+                <span className="text-sm font-medium">Upload an image</span>
+                <span className="text-[10px]">PNG, JPG up to 4 MB</span>
+              </button>
+            )}
+          </div>
 
           {WALLPAPER_CATEGORIES.map((cat) => (
             <div key={cat.category} className="bg-card border border-border rounded-2xl p-4 space-y-3">
