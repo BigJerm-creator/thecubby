@@ -135,6 +135,8 @@ export default function Appearance() {
     setWallpaperOpacity,
     overlayOpacity,
     setOverlayOpacity,
+    foregroundOpacity,
+    setForegroundOpacity,
     saveSettings,
     isLoading,
   } = useTheme();
@@ -358,6 +360,23 @@ export default function Appearance() {
                 data-testid="slider-overlay-opacity"
               />
               <p className="text-[11px] text-muted-foreground">Tints the wallpaper to improve readability.</p>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Content opacity</label>
+                <span className="text-xs text-muted-foreground tabular-nums" data-testid="text-foreground-opacity">
+                  {foregroundOpacity}%
+                </span>
+              </div>
+              <Slider
+                value={[foregroundOpacity]}
+                min={10}
+                max={100}
+                step={1}
+                onValueChange={(v) => setForegroundOpacity(v[0] ?? 100)}
+                data-testid="slider-foreground-opacity"
+              />
+              <p className="text-[11px] text-muted-foreground">Fade cards, text, and the nav bar over your wallpaper.</p>
             </div>
           </div>
 

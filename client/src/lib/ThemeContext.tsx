@@ -38,8 +38,10 @@ export type Background = 'none' | 'custom' | 'christmas-1' | 'christmas-2' | 'ch
 const CUSTOM_BG_KEY = 'cubby_custom_background';
 const WALLPAPER_OPACITY_KEY = 'cubby_wallpaper_opacity';
 const OVERLAY_OPACITY_KEY = 'cubby_overlay_opacity';
+const FOREGROUND_OPACITY_KEY = 'cubby_foreground_opacity';
 const DEFAULT_WALLPAPER_OPACITY = 70;
 const DEFAULT_OVERLAY_OPACITY = 0;
+const DEFAULT_FOREGROUND_OPACITY = 100;
 
 interface ThemeSettings {
   themeMode: ThemeMode;
@@ -59,6 +61,8 @@ interface ThemeContextType extends ThemeSettings {
   setWallpaperOpacity: (value: number) => void;
   overlayOpacity: number;
   setOverlayOpacity: (value: number) => void;
+  foregroundOpacity: number;
+  setForegroundOpacity: (value: number) => void;
   saveSettings: () => Promise<void>;
   isLoading: boolean;
 }
@@ -116,6 +120,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [customBackground, setCustomBackgroundState] = useState<string | null>(null);
   const [wallpaperOpacity, setWallpaperOpacityState] = useState<number>(DEFAULT_WALLPAPER_OPACITY);
   const [overlayOpacity, setOverlayOpacityState] = useState<number>(DEFAULT_OVERLAY_OPACITY);
+  const [foregroundOpacity, setForegroundOpacityState] = useState<number>(DEFAULT_FOREGROUND_OPACITY);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -131,6 +136,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       if (ov !== null) {
         const n = Number(ov);
         if (Number.isFinite(n)) setOverlayOpacityState(Math.max(0, Math.min(100, n)));
+      }
+      const fg = localStorage.getItem(FOREGROUND_OPACITY_KEY);
+      if (fg !== null) {
+        const n = Number(fg);
+        if (Number.isFinite(n)) setForegroundOpacityState(Math.max(10, Math.min(100, n)));
       }
     } catch {}
 
@@ -174,9 +184,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     root.style.setProperty('--holiday-background', bgUrl ? `url("${safeUrl}")` : 'none');
     root.style.setProperty('--wallpaper-opacity', String(wallpaperOpacity / 100));
     root.style.setProperty('--wallpaper-overlay-opacity', String(overlayOpacity / 100));
+    root.style.setProperty('--foreground-opacity', String(foregroundOpacity / 100));
 
     root.setAttribute('data-icon-style', iconStyle);
-  }, [themeMode, colorTheme, background, iconStyle, customBackground, isLoading, wallpaperOpacity, overlayOpacity]);
+  }, [themeMode, colorTheme, background, iconStyle, customBackground, isLoading, wallpaperOpacity, overlayOpacity, foregroundOpacity]);
 
   const setWallpaperOpacity = (value: number) => {
     const clamped = Math.max(0, Math.min(100, Math.round(value)));
@@ -188,6 +199,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const clamped = Math.max(0, Math.min(100, Math.round(value)));
     setOverlayOpacityState(clamped);
     try { localStorage.setItem(OVERLAY_OPACITY_KEY, String(clamped)); } catch {}
+  };
+
+  const setForegroundOpacity = (value: number) => {
+    const clamped = Math.max(10, Math.min(100, Math.round(value)));
+    setForegroundOpacityState(clamped);
+    try { localStorage.setItem(FOREGROUND_OPACITY_KEY, String(clamped)); } catch {}
   };
 
   const setCustomBackground = (dataUrl: string | null): boolean => {
@@ -250,6 +267,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setWallpaperOpacity,
         overlayOpacity,
         setOverlayOpacity,
+        foregroundOpacity,
+        setForegroundOpacity,
         saveSettings,
         isLoading,
       }}

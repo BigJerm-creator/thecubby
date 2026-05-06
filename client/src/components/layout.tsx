@@ -31,12 +31,18 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         style={{ opacity: 'var(--wallpaper-overlay-opacity, 0)' }}
       />
 
-      <main className="flex-1 overflow-y-auto pb-24 px-4 pt-6 scrollbar-hide relative z-10">
+      <main
+        className="flex-1 overflow-y-auto pb-24 px-4 pt-6 scrollbar-hide relative z-10"
+        style={{ opacity: 'var(--foreground-opacity, 1)' }}
+      >
         {children}
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 w-full md:absolute">
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-40 w-full md:absolute"
+        style={{ opacity: 'var(--foreground-opacity, 1)' }}
+      >
         <div className="bg-card/90 backdrop-blur-lg border-t border-border w-full md:max-w-md md:mx-auto pb-6 pt-3 px-2 flex justify-around items-end">
           {navItems.map((item) => {
             const isActive = location === item.path;
