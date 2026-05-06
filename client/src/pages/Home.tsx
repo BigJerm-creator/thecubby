@@ -26,6 +26,50 @@ const mealTypeColors: Record<string, string> = {
   snack: "bg-rose-100 text-rose-800",
 };
 
+function LowStockSection() {
+  const { inventory } = useInventory();
+  const lowStockItems = Object.values(inventory)
+    .flat()
+    .filter(item => item.lowStockThreshold != null && item.quantity <= (item.lowStockThreshold ?? 0));
+
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-serif font-medium">Low Stock Alerts</h2>
+        <Link href="/kitchen" className="text-xs text-primary font-bold tracking-wide uppercase">View All</Link>
+      </div>
+
+      {lowStockItems.length === 0 ? (
+        <div className="p-4 bg-card rounded-xl border border-border text-center">
+          <p className="text-sm text-muted-foreground">No low stock items. Your pantry is well stocked!</p>
+        </div>
+      ) : (
+        <div className="space-y-2" data-testid="list-low-stock">
+          {lowStockItems.slice(0, 5).map(item => (
+            <Link key={item.id} href={`/category/${item.category}`}>
+              <div
+                className="bg-card border border-amber-200 rounded-xl p-3 flex items-center justify-between hover:border-amber-400 transition-colors cursor-pointer"
+                data-testid={`low-stock-item-${item.id}`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="h-9 w-9 rounded-full bg-amber-100 flex items-center justify-center text-base flex-shrink-0">⚠️</div>
+                  <div className="min-w-0">
+                    <p className="font-medium text-foreground truncate">{item.name}</p>
+                    <p className="text-xs text-muted-foreground capitalize">{item.category}</p>
+                  </div>
+                </div>
+                <span className="text-sm font-serif font-medium text-amber-600 flex-shrink-0 ml-2">
+                  {item.quantity} left
+                </span>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function Home() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
@@ -188,30 +232,8 @@ export default function Home() {
           </section>
         )}
 
-        {/* Recent Activity / Low Stock */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-serif font-medium">Low Stock Alerts</h2>
-            <Link href="/kitchen" className="text-xs text-primary font-bold tracking-wide uppercase">View All</Link>
-          </div>
-          
-          <div className="p-4 bg-card rounded-xl border border-border text-center">
-            <p className="text-sm text-muted-foreground">No low stock items. Your pantry is well stocked!</p>
-          </div>
-        </section>
-
-        {/* Featured Tip */}
-        <div className="bg-card border border-border p-5 rounded-2xl shadow-sm relative overflow-hidden">
-          <div className="relative z-10">
-            <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase mb-1 block">Pantry Tip</span>
-            <h3 className="font-serif text-lg text-foreground mb-2">Organize your Spices</h3>
-            <p className="text-sm text-muted-foreground mb-4">Keep spices away from heat and light to preserve flavor potency longer.</p>
-            <button className="text-xs font-bold text-primary border-b border-primary/30 pb-0.5">Read More</button>
-          </div>
-          <div className="absolute -right-4 -bottom-8 opacity-10 text-[120px] select-none pointer-events-none">
-             🧂
-          </div>
-        </div>
+        {/* Low Stock */}
+        <LowStockSection />
       </div>
     </Layout>
   );

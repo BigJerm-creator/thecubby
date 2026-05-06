@@ -13,6 +13,7 @@ export interface InventoryItem {
   category: string;
   barcode?: string | null;
   imageUrl?: string | null;
+  lowStockThreshold?: number | null;
   createdAt: string;
 }
 
@@ -60,6 +61,7 @@ export function InventoryProvider({ children }: { children: ReactNode }) {
       if (item.expiryDate) cleanItem.expiryDate = item.expiryDate;
       if (item.barcode) cleanItem.barcode = item.barcode;
       if (item.imageUrl) cleanItem.imageUrl = item.imageUrl;
+      if (item.lowStockThreshold != null) cleanItem.lowStockThreshold = item.lowStockThreshold;
       await apiRequest('POST', '/api/inventory', cleanItem);
     },
     onSuccess: () => {

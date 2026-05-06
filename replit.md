@@ -32,7 +32,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Key Data Models
 - **Users**: Basic authentication structure (id, username, password)
-- **Inventory Items**: Name, brand, quantity (count), amount/amountUnit (size/volume), category, expiry date, barcode
+- **Inventory Items**: Name, brand, quantity (count), amount/amountUnit (size/volume), category, expiry date, barcode, lowStockThreshold (optional alert level)
 - **Shopping List Items**: Name, category, checked status
 - **Conversations/Messages**: AI chat history for recipe generation
 - **Recipes**: Title, description, ingredients (array), instructions, prep/cook time, servings, category, source, favorite status

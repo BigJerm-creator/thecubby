@@ -56,6 +56,7 @@ export default function ManualEntry() {
     amountUnit: "oz",
     quantity: "1",
     expiryDate: "",
+    lowStockThreshold: "",
   });
 
   useEffect(() => {
@@ -127,7 +128,8 @@ export default function ManualEntry() {
         expiryDate: formData.expiryDate || null,
         category: formData.category,
         barcode: productInfo.barcode || null,
-        imageUrl: productInfo.imageUrl || null
+        imageUrl: productInfo.imageUrl || null,
+        lowStockThreshold: formData.lowStockThreshold ? parseInt(formData.lowStockThreshold) : null,
       });
 
       toast({
@@ -400,6 +402,26 @@ export default function ManualEntry() {
                 ))}
               </select>
             </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-foreground block mb-2">
+              Low Stock Alert <span className="text-xs text-muted-foreground font-normal">(optional)</span>
+            </label>
+            <input
+              type="number"
+              name="lowStockThreshold"
+              value={formData.lowStockThreshold}
+              onChange={handleInputChange}
+              placeholder="e.g., 2"
+              step="1"
+              min="0"
+              className="w-full px-4 py-2 bg-card border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              data-testid="input-low-stock-threshold"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Notify me when quantity drops to this number or below.
+            </p>
           </div>
 
           <div>
