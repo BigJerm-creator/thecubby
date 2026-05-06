@@ -1,7 +1,7 @@
 import Layout from "@/components/layout";
 import { Link, useRoute, useLocation } from "wouter";
 import { KITCHEN_CATEGORIES } from "@/lib/mockData";
-import { Loader2, Minus, Plus, Pencil } from "lucide-react";
+import { Loader2, Minus, Plus, Pencil, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useInventory, InventoryItem } from "@/lib/InventoryContext";
 import { useShoppingList } from "@/lib/ShoppingListContext";
@@ -291,16 +291,27 @@ export default function CategoryView() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="bg-card rounded-t-3xl w-full h-full max-h-full overflow-hidden flex flex-col shadow-2xl"
+              className="bg-card rounded-t-3xl w-full max-h-[85%] overflow-hidden flex flex-col shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="p-4 border-b border-border flex items-center justify-between flex-shrink-0">
-                <h3 className="font-serif text-lg font-medium text-foreground">Edit Item</h3>
+              <div className="p-3 border-b border-border flex items-center gap-2 flex-shrink-0">
                 <button
                   onClick={() => setEditingItem(null)}
-                  className="p-2 -mr-2 hover:bg-muted rounded-full transition-colors text-lg"
+                  className="h-9 w-9 -ml-1 rounded-full hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
                   data-testid="button-close-edit"
-                >✕</button>
+                  aria-label="Back"
+                >
+                  <ArrowLeft size={18} />
+                </button>
+                <h3 className="font-serif text-base font-medium text-foreground flex-1 truncate">Edit Item</h3>
+                <button
+                  onClick={handleSaveEdit}
+                  disabled={savingEdit}
+                  className="px-3 py-1.5 rounded-lg text-sm font-bold text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+                  data-testid="button-save-edit-top"
+                >
+                  {savingEdit ? "Saving..." : "Save"}
+                </button>
               </div>
 
               <div className="p-4 overflow-y-auto space-y-4 flex-1 min-h-0">
