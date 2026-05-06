@@ -114,7 +114,7 @@ export default function Home() {
         <div className="space-y-3">
           <button
             onClick={() => setLocation("/recipes")}
-            className={cn("w-full bg-card/95 backdrop-blur-sm p-4 border border-primary/30 hover:border-primary/50 transition-colors text-left flex items-center gap-4 shadow-sm", styleConfig.containerClass)}
+            className={cn("w-full bg-card backdrop-blur-sm p-4 border border-primary/30 hover:border-primary/50 transition-colors text-left flex items-center gap-4 shadow-sm", styleConfig.containerClass)}
             data-testid="button-recipe-generator"
           >
             <div className={cn("h-12 w-12 bg-primary/20 flex items-center justify-center text-2xl", styleConfig.containerClass)}>
@@ -128,7 +128,7 @@ export default function Home() {
 
           <button
             onClick={() => setLocation("/recipe-book")}
-            className={cn("w-full bg-card/95 backdrop-blur-sm p-4 border border-amber-500/30 hover:border-amber-500/50 transition-colors text-left flex items-center gap-4 shadow-sm", styleConfig.containerClass)}
+            className={cn("w-full bg-card backdrop-blur-sm p-4 border border-amber-500/30 hover:border-amber-500/50 transition-colors text-left flex items-center gap-4 shadow-sm", styleConfig.containerClass)}
             data-testid="button-recipe-book"
           >
             <div className={cn("h-12 w-12 bg-amber-500/20 flex items-center justify-center text-2xl", styleConfig.containerClass)}>
@@ -142,7 +142,7 @@ export default function Home() {
 
           <button
             onClick={() => setLocation("/meal-plan")}
-            className={cn("w-full bg-card/95 backdrop-blur-sm p-4 border border-violet-500/30 hover:border-violet-500/50 transition-colors text-left flex items-center gap-4 shadow-sm", styleConfig.containerClass)}
+            className={cn("w-full bg-card backdrop-blur-sm p-4 border border-violet-500/30 hover:border-violet-500/50 transition-colors text-left flex items-center gap-4 shadow-sm", styleConfig.containerClass)}
             data-testid="button-meal-plan"
           >
             <div className={cn("h-12 w-12 bg-violet-500/20 flex items-center justify-center text-2xl", styleConfig.containerClass)}>

@@ -20,7 +20,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col w-full md:max-w-md md:mx-auto bg-background md:shadow-2xl relative overflow-hidden md:my-4 md:rounded-[3rem] md:border-4 md:border-stone-900/5">
       <div 
-        className="absolute inset-0 pointer-events-none z-0 transition-all duration-300 bg-cover bg-center bg-no-repeat opacity-40"
+        className="absolute inset-0 pointer-events-none z-0 transition-all duration-300 bg-cover bg-center bg-no-repeat opacity-70"
         style={{ backgroundImage: 'var(--holiday-background, none)' }}
       />
 
@@ -30,7 +30,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 w-full md:absolute">
-        <div className="bg-card/80 backdrop-blur-lg border-t border-border w-full md:max-w-md md:mx-auto pb-6 pt-3 px-2 flex justify-around items-end">
+        <div className="bg-card/90 backdrop-blur-lg border-t border-border w-full md:max-w-md md:mx-auto pb-6 pt-3 px-2 flex justify-around items-end">
           {navItems.map((item) => {
             const isActive = location === item.path;
             

@@ -347,7 +347,7 @@ export default function RecipeGenerator() {
           <p className="text-muted-foreground text-sm mt-1">AI-powered recipes from your pantry</p>
         </header>
 
-        <Card className="bg-card/95 backdrop-blur-sm border-primary/20 shadow-md">
+        <Card className="bg-card backdrop-blur-sm border-primary/20 shadow-md">
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -485,7 +485,7 @@ export default function RecipeGenerator() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card/95 backdrop-blur-sm border-primary/20 shadow-md">
+        <Card className="bg-card backdrop-blur-sm border-primary/20 shadow-md">
           <CardContent className="p-6 text-center">
             <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4">
               <ChefHat className="h-8 w-8 text-primary" />
@@ -523,7 +523,7 @@ export default function RecipeGenerator() {
         </Card>
 
         {error && (
-          <Card className="border-destructive/50 bg-card/95 backdrop-blur-sm shadow-md">
+          <Card className="border-destructive/50 bg-card backdrop-blur-sm shadow-md">
             <CardContent className="p-4 text-center text-destructive">
               {error}
             </CardContent>
@@ -531,7 +531,7 @@ export default function RecipeGenerator() {
         )}
 
         {recipe && (
-          <Card className="overflow-hidden bg-card/95 backdrop-blur-sm shadow-md">
+          <Card className="overflow-hidden bg-card backdrop-blur-sm shadow-md">
             <CardContent className="p-6" ref={recipeRef}>
               <div className="prose prose-sm max-w-none">
                 {formatRecipe(recipe)}

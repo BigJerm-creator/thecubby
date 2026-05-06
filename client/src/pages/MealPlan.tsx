@@ -408,7 +408,7 @@ export default function MealPlan() {
           </div>
         </header>
 
-        <Card className="bg-card/95 backdrop-blur-sm shadow-md">
+        <Card className="bg-card backdrop-blur-sm shadow-md">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <Button
@@ -707,7 +707,7 @@ export default function MealPlan() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card/95 backdrop-blur-sm shadow-md">
+        <Card className="bg-card backdrop-blur-sm shadow-md">
           <CardContent className="p-4">
             <div className="flex flex-wrap items-center gap-4 text-sm">
               <span className="text-muted-foreground">Legend:</span>
