@@ -3,6 +3,7 @@ import { useLocation, Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/lib/ThemeContext";
 import { getIconStyleConfig } from "./StyledIcon";
+import wallpaperImage from "@assets/360_F_573340333_qoFOLAwLxV3c07nyWxTQIn414ZVV60DY_1778030667754.jpg";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
@@ -20,33 +21,20 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col w-full md:max-w-md md:mx-auto bg-background md:shadow-2xl relative overflow-hidden md:my-4 md:rounded-[3rem] md:border-4 md:border-stone-900/5">
       <div
-        className="absolute inset-0 pointer-events-none z-0 transition-all duration-300 bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage: 'var(--holiday-background, none)',
-          opacity: 'var(--wallpaper-opacity, 0.7)',
-        }}
-      />
-      <div
-        className="absolute inset-0 pointer-events-none z-0 bg-background transition-opacity duration-300"
-        style={{ opacity: 'var(--wallpaper-overlay-opacity, 0)' }}
+        className="absolute inset-0 pointer-events-none z-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${wallpaperImage})` }}
       />
 
-      <main
-        className="flex-1 overflow-y-auto pb-24 px-4 pt-6 scrollbar-hide relative z-10"
-        style={{ opacity: 'var(--foreground-opacity, 1)' }}
-      >
+      <main className="flex-1 overflow-y-auto pb-24 px-4 pt-6 scrollbar-hide relative z-10">
         {children}
       </main>
 
       {/* Bottom Navigation */}
-      <nav
-        className="fixed bottom-0 left-0 right-0 z-40 w-full md:absolute"
-        style={{ opacity: 'var(--foreground-opacity, 1)' }}
-      >
+      <nav className="fixed bottom-0 left-0 right-0 z-40 w-full md:absolute">
         <div className="bg-card/90 backdrop-blur-lg border-t border-border w-full md:max-w-md md:mx-auto pb-6 pt-3 px-2 flex justify-around items-end">
           {navItems.map((item) => {
             const isActive = location === item.path;
-            
+
             if (item.isPrimary) {
                return (
                 <Link key={item.path} href={item.path}>
