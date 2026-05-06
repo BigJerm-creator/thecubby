@@ -42,10 +42,9 @@ export default function CategoryView() {
   const [savingEdit, setSavingEdit] = useState(false);
 
   useEffect(() => {
-    const open = !!(editingItem || removingItem);
-    lockBodyScroll(open);
+    lockBodyScroll(!!removingItem);
     return () => lockBodyScroll(false);
-  }, [editingItem, removingItem]);
+  }, [removingItem]);
 
   useEffect(() => {
     if (editingItem) {
