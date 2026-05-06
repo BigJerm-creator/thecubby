@@ -158,8 +158,8 @@ export default function CategoryView() {
   if (editingItem) {
     return (
       <Layout>
-        <div className="space-y-5 pb-4">
-          <div className="flex items-center justify-between pt-4 pb-2">
+        <div className="-mx-4 -mt-6">
+          <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-3 flex items-center justify-between">
             <button
               onClick={() => setEditingItem(null)}
               className="p-2 -ml-2 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground"
@@ -171,6 +171,8 @@ export default function CategoryView() {
             <h1 className="text-lg font-serif font-medium text-foreground">Edit Item</h1>
             <div className="w-9" />
           </div>
+
+          <div className="space-y-5 px-4 pt-5 pb-4">
 
           <div>
             <label className="text-sm font-medium text-foreground block mb-2">Name *</label>
@@ -287,7 +289,9 @@ export default function CategoryView() {
             </div>
           </div>
 
-          <div className="flex gap-3 pt-2">
+          </div>
+
+          <div className="sticky bottom-0 z-20 bg-background/95 backdrop-blur-sm border-t border-border px-4 py-3 flex gap-3">
             <button
               onClick={() => setEditingItem(null)}
               className="flex-1 py-3 rounded-xl border border-border text-foreground font-medium hover:bg-muted transition-colors"
