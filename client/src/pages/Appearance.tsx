@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Layout from "@/components/layout";
-import { ArrowLeft, Sun, Moon, Check, Save, Sparkles, X, Refrigerator, ShoppingBasket, UtensilsCrossed, Cookie, Carrot, Apple, Milk, Sandwich, Egg, IceCream, Pizza, Beef, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Sun, Moon, Check, Save, Sparkles, X } from "lucide-react";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -40,43 +40,38 @@ interface IconStyleConfig {
   id: IconStyle;
   label: string;
   description: string;
-  iconClass: string;
   containerClass: string;
-  previewIcons: LucideIcon[];
+  previewEmojis: string[];
 }
 
 const ICON_STYLES: IconStyleConfig[] = [
-  { 
-    id: "default", 
-    label: "Classic", 
-    description: "Clean & minimal",
-    iconClass: "stroke-[1.5]",
-    containerClass: "bg-muted/50 rounded-lg",
-    previewIcons: [Refrigerator, ShoppingBasket, Carrot, Milk]
+  {
+    id: "default",
+    label: "Garden Fresh",
+    description: "Fruits & veggies",
+    containerClass: "bg-green-50 dark:bg-green-900/20 rounded-lg",
+    previewEmojis: ["🥕", "🍎", "🥬", "🍅"],
   },
-  { 
-    id: "rounded", 
-    label: "Soft", 
-    description: "Rounded & gentle",
-    iconClass: "stroke-[2]",
-    containerClass: "bg-primary/10 rounded-full",
-    previewIcons: [Apple, Egg, Cookie, UtensilsCrossed]
+  {
+    id: "rounded",
+    label: "Bakery",
+    description: "Breads & pastries",
+    containerClass: "bg-amber-50 dark:bg-amber-900/20 rounded-full",
+    previewEmojis: ["🥐", "🍞", "🥖", "🥯"],
   },
-  { 
-    id: "sharp", 
-    label: "Bold", 
-    description: "Strong & precise",
-    iconClass: "stroke-[2.5]",
-    containerClass: "bg-foreground/10 rounded-none",
-    previewIcons: [Beef, Pizza, Sandwich, Refrigerator]
+  {
+    id: "sharp",
+    label: "Comfort Food",
+    description: "Hearty & filling",
+    containerClass: "bg-orange-50 dark:bg-orange-900/20 rounded-md",
+    previewEmojis: ["🍕", "🍔", "🌮", "🍟"],
   },
-  { 
-    id: "playful", 
-    label: "Fun", 
-    description: "Colorful & lively",
-    iconClass: "stroke-[1.75]",
-    containerClass: "bg-gradient-to-br from-pink-100 to-purple-100 dark:from-pink-900/30 dark:to-purple-900/30 rounded-xl",
-    previewIcons: [IceCream, Cookie, Apple, Carrot]
+  {
+    id: "playful",
+    label: "Sweet Treats",
+    description: "Desserts & sweets",
+    containerClass: "bg-pink-50 dark:bg-pink-900/20 rounded-2xl",
+    previewEmojis: ["🧁", "🍩", "🍦", "🍭"],
   },
 ];
 
@@ -280,15 +275,12 @@ export default function Appearance() {
                     <Check className="text-primary absolute top-2 right-2" size={14} />
                   )}
                   <div className="grid grid-cols-2 gap-2">
-                    {style.previewIcons.map((Icon, idx) => (
-                      <div 
-                        key={idx} 
-                        className={`h-9 w-9 flex items-center justify-center ${style.containerClass}`}
+                    {style.previewEmojis.map((emoji, idx) => (
+                      <div
+                        key={idx}
+                        className={`h-10 w-10 flex items-center justify-center text-xl ${style.containerClass}`}
                       >
-                        <Icon 
-                          size={18} 
-                          className={`text-foreground ${style.iconClass}`}
-                        />
+                        {emoji}
                       </div>
                     ))}
                   </div>
