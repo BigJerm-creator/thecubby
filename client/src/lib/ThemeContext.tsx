@@ -36,6 +36,10 @@ export type ColorTheme = 'farmhouse' | 'ocean' | 'sunset' | 'forest' | 'lavender
 export type Background = 'none' | 'custom' | 'christmas-1' | 'christmas-2' | 'christmas-3' | 'christmas-4' | 'christmas-5' | 'halloween-1' | 'halloween-2' | 'halloween-3' | 'halloween-4' | 'halloween-5' | 'thanksgiving-1' | 'thanksgiving-2' | 'thanksgiving-3' | 'thanksgiving-4' | 'thanksgiving-5' | 'easter-1' | 'easter-2' | 'easter-3' | 'easter-4' | 'easter-5' | 'valentines-1' | 'valentines-2' | 'valentines-3' | 'valentines-4' | 'valentines-5' | 'summer-1' | 'summer-2' | 'summer-3' | 'summer-4' | 'summer-5';
 
 const CUSTOM_BG_KEY = 'cubby_custom_background';
+const WALLPAPER_OPACITY_KEY = 'cubby_wallpaper_opacity';
+const OVERLAY_OPACITY_KEY = 'cubby_overlay_opacity';
+const DEFAULT_WALLPAPER_OPACITY = 70;
+const DEFAULT_OVERLAY_OPACITY = 0;
 
 interface ThemeSettings {
   themeMode: ThemeMode;
@@ -51,6 +55,10 @@ interface ThemeContextType extends ThemeSettings {
   setBackground: (bg: Background) => void;
   customBackground: string | null;
   setCustomBackground: (dataUrl: string | null) => boolean;
+  wallpaperOpacity: number;
+  setWallpaperOpacity: (value: number) => void;
+  overlayOpacity: number;
+  setOverlayOpacity: (value: number) => void;
   saveSettings: () => Promise<void>;
   isLoading: boolean;
 }
@@ -106,12 +114,24 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [colorTheme, setColorThemeState] = useState<ColorTheme>('farmhouse');
   const [background, setBackgroundState] = useState<Background>('none');
   const [customBackground, setCustomBackgroundState] = useState<string | null>(null);
+  const [wallpaperOpacity, setWallpaperOpacityState] = useState<number>(DEFAULT_WALLPAPER_OPACITY);
+  const [overlayOpacity, setOverlayOpacityState] = useState<number>(DEFAULT_OVERLAY_OPACITY);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     try {
       const stored = localStorage.getItem(CUSTOM_BG_KEY);
       if (stored) setCustomBackgroundState(stored);
+      const wp = localStorage.getItem(WALLPAPER_OPACITY_KEY);
+      if (wp !== null) {
+        const n = Number(wp);
+        if (Number.isFinite(n)) setWallpaperOpacityState(Math.max(0, Math.min(100, n)));
+      }
+      const ov = localStorage.getItem(OVERLAY_OPACITY_KEY);
+      if (ov !== null) {
+        const n = Number(ov);
+        if (Number.isFinite(n)) setOverlayOpacityState(Math.max(0, Math.min(100, n)));
+      }
     } catch {}
 
     fetch('/api/profile')
@@ -152,9 +172,23 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }
     const safeUrl = bgUrl.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
     root.style.setProperty('--holiday-background', bgUrl ? `url("${safeUrl}")` : 'none');
-    
+    root.style.setProperty('--wallpaper-opacity', String(wallpaperOpacity / 100));
+    root.style.setProperty('--wallpaper-overlay-opacity', String(overlayOpacity / 100));
+
     root.setAttribute('data-icon-style', iconStyle);
-  }, [themeMode, colorTheme, background, iconStyle, customBackground, isLoading]);
+  }, [themeMode, colorTheme, background, iconStyle, customBackground, isLoading, wallpaperOpacity, overlayOpacity]);
+
+  const setWallpaperOpacity = (value: number) => {
+    const clamped = Math.max(0, Math.min(100, Math.round(value)));
+    setWallpaperOpacityState(clamped);
+    try { localStorage.setItem(WALLPAPER_OPACITY_KEY, String(clamped)); } catch {}
+  };
+
+  const setOverlayOpacity = (value: number) => {
+    const clamped = Math.max(0, Math.min(100, Math.round(value)));
+    setOverlayOpacityState(clamped);
+    try { localStorage.setItem(OVERLAY_OPACITY_KEY, String(clamped)); } catch {}
+  };
 
   const setCustomBackground = (dataUrl: string | null): boolean => {
     try {
@@ -212,6 +246,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
         setBackground,
         customBackground,
         setCustomBackground,
+        wallpaperOpacity,
+        setWallpaperOpacity,
+        overlayOpacity,
+        setOverlayOpacity,
         saveSettings,
         isLoading,
       }}

@@ -4,6 +4,7 @@ import { ArrowLeft, Sun, Moon, Check, Save, Sparkles, X, Upload, Trash2, ImagePl
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { useTheme, type ThemeMode, type ColorTheme, type Background } from "@/lib/ThemeContext";
 import christmasWallpaper1 from '@assets/generated_images/christmas_themed_wallpaper.png';
 import christmasWallpaper2 from '@assets/generated_images/christmas_fireplace_wallpaper.png';
@@ -130,6 +131,10 @@ export default function Appearance() {
     setBackground,
     customBackground,
     setCustomBackground,
+    wallpaperOpacity,
+    setWallpaperOpacity,
+    overlayOpacity,
+    setOverlayOpacity,
     saveSettings,
     isLoading,
   } = useTheme();
@@ -319,6 +324,43 @@ export default function Appearance() {
             <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Custom Wallpapers</h3>
           </div>
           
+          <div className="bg-card border border-border rounded-2xl p-4 space-y-5">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Wallpaper brightness</label>
+                <span className="text-xs text-muted-foreground tabular-nums" data-testid="text-wallpaper-opacity">
+                  {wallpaperOpacity}%
+                </span>
+              </div>
+              <Slider
+                value={[wallpaperOpacity]}
+                min={0}
+                max={100}
+                step={1}
+                onValueChange={(v) => setWallpaperOpacity(v[0] ?? 0)}
+                data-testid="slider-wallpaper-opacity"
+              />
+              <p className="text-[11px] text-muted-foreground">How vivid the wallpaper appears.</p>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Background overlay</label>
+                <span className="text-xs text-muted-foreground tabular-nums" data-testid="text-overlay-opacity">
+                  {overlayOpacity}%
+                </span>
+              </div>
+              <Slider
+                value={[overlayOpacity]}
+                min={0}
+                max={100}
+                step={1}
+                onValueChange={(v) => setOverlayOpacity(v[0] ?? 0)}
+                data-testid="slider-overlay-opacity"
+              />
+              <p className="text-[11px] text-muted-foreground">Tints the wallpaper to improve readability.</p>
+            </div>
+          </div>
+
           <button
             onClick={() => setBackground("none")}
             className={`w-full bg-card border rounded-2xl p-4 flex items-center gap-3 transition-all ${

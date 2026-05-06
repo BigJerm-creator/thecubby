@@ -19,9 +19,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col w-full md:max-w-md md:mx-auto bg-background md:shadow-2xl relative overflow-hidden md:my-4 md:rounded-[3rem] md:border-4 md:border-stone-900/5">
-      <div 
-        className="absolute inset-0 pointer-events-none z-0 transition-all duration-300 bg-cover bg-center bg-no-repeat opacity-70"
-        style={{ backgroundImage: 'var(--holiday-background, none)' }}
+      <div
+        className="absolute inset-0 pointer-events-none z-0 transition-all duration-300 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: 'var(--holiday-background, none)',
+          opacity: 'var(--wallpaper-opacity, 0.7)',
+        }}
+      />
+      <div
+        className="absolute inset-0 pointer-events-none z-0 bg-background transition-opacity duration-300"
+        style={{ opacity: 'var(--wallpaper-overlay-opacity, 0)' }}
       />
 
       <main className="flex-1 overflow-y-auto pb-24 px-4 pt-6 scrollbar-hide relative z-10">
