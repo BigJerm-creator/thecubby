@@ -33,7 +33,7 @@ function LowStockSection() {
     .filter(item => item.lowStockThreshold != null && item.quantity <= (item.lowStockThreshold ?? 0));
 
   return (
-    <section>
+    <section className="pb-8">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-serif font-medium">Low Stock Alerts</h2>
         <Link href="/kitchen" className="text-xs text-primary font-bold tracking-wide uppercase">View All</Link>
