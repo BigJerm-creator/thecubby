@@ -283,7 +283,7 @@ export default function CategoryView() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/50 z-50 flex items-end justify-center"
+            className="fixed inset-0 bg-black/50 z-50 flex items-stretch justify-center"
             onClick={() => setEditingItem(null)}
           >
             <motion.div
@@ -291,7 +291,7 @@ export default function CategoryView() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="bg-card rounded-t-3xl w-full max-h-[85%] overflow-hidden flex flex-col shadow-2xl"
+              className="bg-card w-full md:max-w-md md:mx-auto h-full overflow-hidden flex flex-col shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-3 border-b border-border flex items-center gap-2 flex-shrink-0">
@@ -455,7 +455,7 @@ export default function CategoryView() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
             onClick={() => setRemovingItem(null)}
           >
             <motion.div
