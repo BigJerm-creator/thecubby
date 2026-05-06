@@ -8,6 +8,11 @@ import { useShoppingList } from "@/lib/ShoppingListContext";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 
+const lockBodyScroll = (lock: boolean) => {
+  if (typeof document === 'undefined') return;
+  document.body.style.overflow = lock ? 'hidden' : '';
+};
+
 const UNIT_OPTIONS = [
   "oz", "lbs", "grams", "ml", "liters", "gal", "cups", "tbsp", "tsp", "each", "dozen", "pack"
 ];
@@ -21,7 +26,6 @@ export default function CategoryView() {
   const { addItem: addToShoppingList } = useShoppingList();
   const { toast } = useToast();
   const items = inventory[categoryId] || [];
-  const [movingItem, setMovingItem] = useState<{ id: number; name: string } | null>(null);
   const [removingItem, setRemovingItem] = useState<InventoryItem | null>(null);
   const [removeCount, setRemoveCount] = useState(1);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
@@ -36,6 +40,12 @@ export default function CategoryView() {
     category: "",
   });
   const [savingEdit, setSavingEdit] = useState(false);
+
+  useEffect(() => {
+    const open = !!(editingItem || removingItem);
+    lockBodyScroll(open);
+    return () => lockBodyScroll(false);
+  }, [editingItem, removingItem]);
 
   useEffect(() => {
     if (editingItem) {
@@ -102,14 +112,6 @@ export default function CategoryView() {
       }
     }
     setRemovingItem(null);
-  };
-
-  const handleMoveItem = async (newCategory: string) => {
-    if (!movingItem) return;
-    const targetCategory = KITCHEN_CATEGORIES.find(c => c.id === newCategory);
-    await updateItem(movingItem.id, { category: newCategory });
-    toast({ title: "Item Moved", description: `${movingItem.name} moved to ${targetCategory?.name || newCategory}` });
-    setMovingItem(null);
   };
 
   const handleAddToShoppingList = async (itemName: string) => {
@@ -254,13 +256,6 @@ export default function CategoryView() {
                     </button>
 
                     <button
-                      onClick={() => setMovingItem({ id: item.id, name: item.name })}
-                      className="h-8 w-8 rounded-full bg-purple-50 flex items-center justify-center hover:bg-purple-600 transition-colors text-sm"
-                      data-testid={`button-move-item-${item.id}`}
-                      title="Move to another category"
-                    >↔️</button>
-
-                    <button
                       onClick={() => handleAddToShoppingList(item.name)}
                       className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center hover:bg-blue-600 transition-colors text-sm"
                       data-testid={`button-add-to-shopping-list-${item.id}`}
@@ -281,14 +276,14 @@ export default function CategoryView() {
         </div>
       </div>
 
-      {/* Edit Dialog */}
+      {/* Edit Dialog — absolute so it stays inside the phone frame on desktop preview */}
       <AnimatePresence>
         {editingItem && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center"
+            className="absolute inset-0 bg-black/50 z-50 flex items-end justify-center"
             onClick={() => setEditingItem(null)}
           >
             <motion.div
@@ -296,7 +291,7 @@ export default function CategoryView() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="bg-card rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col"
+              className="bg-card rounded-t-3xl w-full h-full max-h-full overflow-hidden flex flex-col shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="p-4 border-b border-border flex items-center justify-between flex-shrink-0">
@@ -308,7 +303,7 @@ export default function CategoryView() {
                 >✕</button>
               </div>
 
-              <div className="p-4 overflow-y-auto space-y-4">
+              <div className="p-4 overflow-y-auto space-y-4 flex-1 min-h-0">
                 <div>
                   <label className="text-sm font-medium text-foreground block mb-2">Name *</label>
                   <input
@@ -444,57 +439,12 @@ export default function CategoryView() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {movingItem && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center pb-safe"
-            onClick={() => setMovingItem(null)}
-          >
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="bg-card rounded-t-3xl w-full max-w-lg max-h-[70vh] overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="p-4 border-b border-border flex items-center justify-between">
-                <h3 className="font-serif text-lg font-medium text-foreground">Move "{movingItem.name}"</h3>
-                <button
-                  onClick={() => setMovingItem(null)}
-                  className="p-2 -mr-2 hover:bg-muted rounded-full transition-colors text-lg"
-                >✕</button>
-              </div>
-              <div className="p-4 overflow-y-auto max-h-[calc(70vh-80px)]">
-                <p className="text-sm text-muted-foreground mb-4">Select a new category:</p>
-                <div className="grid grid-cols-3 gap-3">
-                  {KITCHEN_CATEGORIES.filter(c => c.id !== categoryId).map((cat) => (
-                    <button
-                      key={cat.id}
-                      onClick={() => handleMoveItem(cat.id)}
-                      className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-colors"
-                      data-testid={`button-move-to-${cat.id}`}
-                    >
-                      <span className="text-2xl">{cat.image}</span>
-                      <span className="text-xs text-center font-medium text-foreground">{cat.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
         {removingItem && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            className="absolute inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
             onClick={() => setRemovingItem(null)}
           >
             <motion.div
