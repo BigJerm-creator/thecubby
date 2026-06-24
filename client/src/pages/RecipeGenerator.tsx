@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ChefHat, Loader2, Sparkles, BookPlus, Check, CheckSquare, Search, Globe, Clock, Users, X, Filter, UtensilsCrossed } from "lucide-react";
 import { useInventory } from "@/lib/InventoryContext";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, getNativeAuthHeaders } from "@/lib/queryClient";
 
 interface SearchMeal {
   id: string;
@@ -103,7 +103,7 @@ export default function RecipeGenerator() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/recipe-search/filters", { credentials: "include" })
+    fetch("/api/recipe-search/filters", { credentials: "include", headers: getNativeAuthHeaders() })
       .then(r => r.ok ? r.json() : { categories: [], areas: [] })
       .then(d => setFilters(d))
       .catch(() => {});
@@ -118,7 +118,7 @@ export default function RecipeGenerator() {
     setIsSearching(true);
     setHasSearched(true);
     try {
-      const res = await fetch(`/api/recipe-search?q=${encodeURIComponent(query.trim())}`, { credentials: "include" });
+      const res = await fetch(`/api/recipe-search?q=${encodeURIComponent(query.trim())}`, { credentials: "include", headers: getNativeAuthHeaders() });
       if (!res.ok) throw new Error("Search failed");
       const data = await res.json();
       setSearchResults(data.meals || []);
@@ -153,7 +153,7 @@ export default function RecipeGenerator() {
     setHasSearched(true);
     try {
       const param = type === "category" ? `category=${encodeURIComponent(value)}` : `area=${encodeURIComponent(value)}`;
-      const res = await fetch(`/api/recipe-search?${param}`, { credentials: "include" });
+      const res = await fetch(`/api/recipe-search?${param}`, { credentials: "include", headers: getNativeAuthHeaders() });
       if (!res.ok) throw new Error("Browse failed");
       const data = await res.json();
       setSearchResults(data.meals || []);
@@ -206,7 +206,8 @@ export default function RecipeGenerator() {
     try {
       const response = await fetch("/api/generate-recipe", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        headers: { "Content-Type": "application/json", ...getNativeAuthHeaders() },
       });
 
       if (!response.ok) {
@@ -286,7 +287,8 @@ export default function RecipeGenerator() {
       
       const res = await fetch("/api/recipes", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        headers: { "Content-Type": "application/json", ...getNativeAuthHeaders() },
         body: JSON.stringify({
           title: title || "Generated Recipe",
           description: "AI-generated recipe from pantry ingredients",

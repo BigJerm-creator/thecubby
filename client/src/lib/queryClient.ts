@@ -20,7 +20,10 @@ export function clearNativeSession(): void {
 }
 
 export function getNativeAuthHeaders(): Record<string, string> {
-  if (!isNativePlatform()) return {};
+  const isStandalone =
+    (window.navigator as any).standalone === true ||
+    window.matchMedia?.('(display-mode: standalone)').matches === true;
+  if (!isNativePlatform() && !isStandalone) return {};
   const sid = localStorage.getItem(NATIVE_SESSION_KEY);
   return sid ? { Authorization: `Bearer ${sid}` } : {};
 }
