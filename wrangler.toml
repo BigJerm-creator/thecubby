@@ -1,0 +1,8 @@
+name = "the-cubby"
+compatibility_date = "2026-06-22"
+pages_build_output_dir = "dist/public"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "the-cubby-db"
+database_id = "0e5921a6-5cb4-4fb3-8aca-e4eb2187f87a"

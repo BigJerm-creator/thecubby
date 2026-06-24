@@ -3,7 +3,7 @@ import { useLocation, Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/lib/ThemeContext";
 import { getIconStyleConfig } from "./StyledIcon";
-import wallpaperImage from "@assets/360_F_573340333_qoFOLAwLxV3c07nyWxTQIn414ZVV60DY_1778030667754.jpg";
+import { Home, ChefHat, ScanLine, Search, Settings } from "lucide-react";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
@@ -11,52 +11,61 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const styleConfig = getIconStyleConfig(iconStyle);
 
   const navItems = [
-    { emoji: "🏠", label: "Home", path: "/" },
-    { emoji: "🍳", label: "Kitchen", path: "/kitchen" },
-    { emoji: "📷", label: "Scan", path: "/scan", isPrimary: true },
-    { emoji: "🔍", label: "Search", path: "/search" },
-    { emoji: "⚙️", label: "Settings", path: "/settings" },
+    { icon: Home, label: "Home", path: "/" },
+    { icon: ChefHat, label: "Kitchen", path: "/kitchen" },
+    { icon: ScanLine, label: "Scan", path: "/scan", isPrimary: true },
+    { icon: Search, label: "Search", path: "/search" },
+    { icon: Settings, label: "Settings", path: "/settings" },
   ];
 
   return (
     <div className="min-h-screen flex flex-col w-full md:max-w-md md:mx-auto bg-background md:shadow-2xl relative overflow-hidden md:my-4 md:rounded-[3rem] md:border-4 md:border-stone-900/5">
-      <div
-        className="absolute inset-0 pointer-events-none z-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${wallpaperImage})` }}
-      />
-
-      <main className="flex-1 overflow-y-auto pb-24 px-4 pt-6 scrollbar-hide relative z-10">
+      <main className="flex-1 overflow-y-auto pb-24 px-4 pt-6 scrollbar-hide">
         {children}
       </main>
 
-      {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 w-full md:absolute">
-        <div className="bg-card/90 backdrop-blur-lg border-t border-border w-full md:max-w-md md:mx-auto pb-6 pt-3 px-2 flex justify-around items-end">
+        <div className="bg-card/95 backdrop-blur-lg border-t border-border w-full md:max-w-md md:mx-auto pb-6 pt-3 px-2 flex justify-around items-end">
           {navItems.map((item) => {
             const isActive = location === item.path;
+            const Icon = item.icon;
 
             if (item.isPrimary) {
-               return (
+              return (
                 <Link key={item.path} href={item.path}>
                   <div className="relative -top-5 group cursor-pointer">
-                    <div className={cn("absolute inset-0 bg-primary/20 blur-md group-hover:bg-primary/30 transition-all", styleConfig.containerClass)} />
-                    <div className={cn("bg-primary h-14 w-14 flex items-center justify-center shadow-lg transform transition-transform group-active:scale-95 border-4 border-background", styleConfig.containerClass)}>
-                      <span className="text-2xl">{item.emoji}</span>
+                    <div className={cn(
+                      "absolute inset-0 bg-primary/20 blur-md group-hover:bg-primary/30 transition-all",
+                      styleConfig.containerClass
+                    )} />
+                    <div className={cn(
+                      "bg-primary h-14 w-14 flex items-center justify-center shadow-lg transform transition-transform group-active:scale-95 border-4 border-background",
+                      styleConfig.containerClass
+                    )}>
+                      <Icon size={24} className="text-primary-foreground" strokeWidth={1.75} />
                     </div>
                   </div>
                 </Link>
-               )
+              );
             }
 
             return (
               <Link key={item.path} href={item.path}>
                 <div className={cn(
-                  "flex flex-col items-center gap-1 p-2 transition-colors cursor-pointer",
-                  styleConfig.containerClass,
-                  isActive ? "opacity-100" : "opacity-60 hover:opacity-80"
+                  "flex flex-col items-center gap-1 p-2 transition-all cursor-pointer",
+                  isActive ? "opacity-100" : "opacity-50 hover:opacity-75"
                 )}>
-                  <span className={cn("text-xl", isActive && "scale-110")}>{item.emoji}</span>
-                  <span className="text-[10px] font-medium">{item.label}</span>
+                  <Icon
+                    size={22}
+                    className={cn("transition-colors", isActive ? "text-primary" : "text-foreground")}
+                    strokeWidth={isActive ? 2 : 1.5}
+                  />
+                  <span className={cn(
+                    "text-[10px] font-medium transition-colors",
+                    isActive ? "text-primary" : "text-muted-foreground"
+                  )}>
+                    {item.label}
+                  </span>
                 </div>
               </Link>
             );

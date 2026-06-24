@@ -7,9 +7,14 @@
     "dev:client": "vite dev --port 5000",
     "dev": "NODE_ENV=development tsx server/index.ts",
     "build": "tsx script/build.ts",
+    "build:client": "vite build",
     "start": "NODE_ENV=production node dist/index.cjs",
     "check": "tsc",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "db:generate:d1": "drizzle-kit generate --config drizzle.d1.config.ts",
+    "db:migrate:d1": "wrangler d1 execute the-cubby-db --remote --file=migrations/d1/0000_military_annihilus.sql",
+    "build:cloudflare": "tsx script/build.cloudflare.ts",
+    "deploy": "npm run build:cloudflare && wrangler pages deploy dist/public --project-name the-cubby --commit-dirty=true --branch main"
   },
   "dependencies": {
     "@capacitor/android": "^8.1.0",
@@ -69,6 +74,7 @@
     "express": "^4.21.2",
     "express-session": "^1.19.0",
     "framer-motion": "^12.23.24",
+    "hono": "^4.12.26",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.545.0",
     "memoizee": "^0.4.17",
@@ -100,6 +106,7 @@
     "zod-validation-error": "^3.5.4"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260621.1",
     "@replit/vite-plugin-cartographer": "^0.4.4",
     "@replit/vite-plugin-dev-banner": "^0.1.1",
     "@replit/vite-plugin-runtime-error-modal": "^0.0.4",
@@ -121,7 +128,8 @@
     "tailwindcss": "^4.1.14",
     "tsx": "^4.20.5",
     "typescript": "5.6.3",
-    "vite": "^7.1.9"
+    "vite": "^7.1.9",
+    "wrangler": "^4.103.0"
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"

@@ -1,12 +1,28 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
-import { getServerUrl } from "./capacitor";
+import { getServerUrl, isNativePlatform } from "./capacitor";
 
-function resolveUrl(url: string): string {
+export function resolveUrl(url: string): string {
   const base = getServerUrl();
   if (base && url.startsWith('/')) {
     return `${base}${url}`;
   }
   return url;
+}
+
+const NATIVE_SESSION_KEY = "_native_session";
+
+export function saveNativeSession(sid: string): void {
+  localStorage.setItem(NATIVE_SESSION_KEY, sid);
+}
+
+export function clearNativeSession(): void {
+  localStorage.removeItem(NATIVE_SESSION_KEY);
+}
+
+export function getNativeAuthHeaders(): Record<string, string> {
+  if (!isNativePlatform()) return {};
+  const sid = localStorage.getItem(NATIVE_SESSION_KEY);
+  return sid ? { Authorization: `Bearer ${sid}` } : {};
 }
 
 async function throwIfResNotOk(res: Response) {
@@ -23,7 +39,7 @@ export async function apiRequest(
 ): Promise<Response> {
   const res = await fetch(resolveUrl(url), {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers: { ...getNativeAuthHeaders(), ...(data ? { "Content-Type": "application/json" } : {}) },
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
@@ -41,6 +57,7 @@ export const getQueryFn: <T>(options: {
     const url = resolveUrl(queryKey.join("/") as string);
     const res = await fetch(url, {
       credentials: "include",
+      headers: getNativeAuthHeaders(),
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
@@ -55,7 +72,7 @@ let redirecting = false;
 function handleUnauthorized() {
   if (!redirecting) {
     redirecting = true;
-    window.location.href = "/api/login";
+    window.location.href = "/";
   }
 }
 

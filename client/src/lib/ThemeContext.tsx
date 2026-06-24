@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { resolveUrl } from './queryClient';
 
 export type ThemeMode = 'light' | 'dark';
 export type IconStyle = 'default' | 'rounded' | 'sharp' | 'playful';
@@ -54,8 +55,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/profile')
-      .then(res => res.json())
+    fetch(resolveUrl('/api/profile'), { credentials: 'include' })
+      .then(res => (res.ok ? res.json() : null))
       .then(data => {
         if (data) {
           setThemeModeState((data.themeMode as ThemeMode) || 'light');
@@ -65,7 +66,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
           }
         }
       })
-      .catch(err => console.error('Failed to load theme settings:', err))
+      .catch(() => {})
       .finally(() => setIsLoading(false));
   }, []);
 
@@ -86,16 +87,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [themeMode, colorTheme, iconStyle]);
 
   const saveSettings = async () => {
-    const currentProfile = await fetch('/api/profile').then(res => res.json()) || {};
-    await fetch('/api/profile', {
+    const currentProfile = await fetch(resolveUrl('/api/profile'), { credentials: 'include' }).then(res => res.ok ? res.json() : {}).catch(() => ({}));
+    await fetch(resolveUrl('/api/profile'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...currentProfile,
-        themeMode,
-        iconStyle,
-        colorTheme,
-      }),
+      credentials: 'include',
+      body: JSON.stringify({ ...currentProfile, themeMode, iconStyle, colorTheme }),
     });
   };
 
