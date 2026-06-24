@@ -16,7 +16,7 @@ function isStandalone(): boolean {
 }
 
 function showGoogleAuth(): boolean {
-  return showGoogleAuth() && !isStandalone();
+  return !isNativePlatform() && !isStandalone();
 }
 
 const FEATURES = [
